@@ -38,6 +38,9 @@ fcfs_write_table(fcfs_args_t *args);
 int
 fcfs_alloc(fcfs_args_t *args, int fid);
 
+int
+fcfs_get_file_size(fcfs_args_t *args, int fid);
+
 static inline int
 to_block_count(int data_len, int lblk_sz) {
     return ceil(data_len / (double)lblk_sz);

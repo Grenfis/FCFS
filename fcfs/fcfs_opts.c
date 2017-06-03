@@ -89,7 +89,7 @@ fcfs_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi) {
         int bl = get_parrent_path(path);
         bl = bl == 0 ? 1: bl;
         memcpy(fcfs_getattr_cache.path, path, bl);
-        fcfs_getattr_cache.path[bl + 1] = '\0';
+        fcfs_getattr_cache.path[bl] = '\0';
         //check file path in cache
         fcfs_pcache_get(pcache, &fcfs_getattr_cache);
         DEBUG("cache updated");
@@ -118,7 +118,8 @@ fcfs_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi) {
             fcfs_pcache_add(pcache, &fcfs_getattr_cache);
 
             stbufm->st_nlink = args->fs_table->entrys[dirs[i].file_id].link_count;
-            stbufm->st_mode =  dirs[i].mode; //todo: permission system
+            stbufm->st_mode =  dirs[i].mode; 
+            stbufm->st_size = fcfs_get_file_size(args, dirs[i].file_id);
 
             free(dirs);
             return 0;
@@ -153,16 +154,7 @@ fcfs_readdir(   const char *path,
     }
 
     for(size_t i = 0; i < dirs_len; ++i) {
-        struct stat *st = calloc(1, sizeof(struct stat));
-        st->st_uid      = getuid();
-        st->st_gid      = getgid();
-        st->st_atime    = dirs[i].access_date;
-        st->st_mtime    = dirs[i].change_date;
-        st->st_ctime    = dirs[i].create_date;
-        st->st_nlink    = args->fs_table->entrys[dirs[i].file_id].link_count;
-        st->st_mode     = dirs[i].mode; //todo: permission system
-
-        filler(buf, dirs[i].name, st, 0, 0);
+        filler(buf, dirs[i].name, NULL, 0, 0);
     }
 
     free(dirs);
