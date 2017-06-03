@@ -48,4 +48,9 @@ typedef struct fcfs_getattr_bentry {
     int fid;
 } fcfs_getattr_bentry_t;
 
+typedef struct fcfs_path_cache {
+    char pos;
+    fcfs_getattr_bentry_t entrys[50];
+} fcfs_path_cacche_t;
+
 #endif

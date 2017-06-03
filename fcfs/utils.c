@@ -27,16 +27,17 @@ pathcmp(const char *a, const char *b) {
         return 0;
     DEBUG("a & b is not NULL");
 
-    int la = strlen(a);
-    int lb = strlen(b);
-    if(la == 0 || lb == 0 || la > lb)
+    int bl = strlen(b);
+    while(b[bl] != '/')
+        bl--;
+
+    char *tmp = calloc(1, bl);
+    memcpy(tmp, b, bl);
+
+    if(strcmp(a, tmp) != 0)
         return 0;
-    DEBUG("strlen a: %d b: %d", la, lb);
 
-    for(size_t i = 0; i < la; ++i) {
-        if(a[i] != b[i])
-            return 0;
-    }
-
+    DEBUG("ok %s %s", a, tmp);
+    free(tmp);
     return 1;
 }

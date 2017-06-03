@@ -17,7 +17,7 @@
 
 static fcfs_getattr_bentry_t fcfs_getattr_cache = {
     .path   = NULL,
-    .fid    = -1
+    .fid    = 0
 };
 
 static fcfs_args_t *
@@ -38,6 +38,7 @@ fcfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
     }
 
     fcfs_getattr_cache.path = calloc(1, FCFS_MAX_FILE_NAME_LENGTH);
+    strcpy(fcfs_getattr_cache.path, "/");
     return (void*)args;
 }
 
@@ -80,6 +81,7 @@ fcfs_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi) {
     if(!pathcmp(fcfs_getattr_cache.path, path)) {
         strcpy(fcfs_getattr_cache.path, "/");
         fcfs_getattr_cache.fid = 0;
+        //todo: при / и /12/1 выходит что fid = 0 а не 1 => пройти весь путь
         DEBUG("cache updated");
     }
     //get directory content
@@ -91,7 +93,11 @@ fcfs_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi) {
         return -ENOENT;
     }
 
-    int p_len = strlen(fcfs_getattr_cache.path);
+    int p_len = strlen(path);
+    while(path[p_len] != '/')
+        p_len--;
+    p_len += 1;
+
     for(size_t i = 0; i < dirs_len; ++i) {
         //if directory contents requested file
         if(strcmp(dirs[i].name, path + p_len) == 0) {
@@ -103,7 +109,7 @@ fcfs_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi) {
             strcpy(fcfs_getattr_cache.path, path);
 
             stbufm->st_nlink = args->fs_table->entrys[dirs[i].file_id].link_count;
-            stbufm->st_mode = dirs[i].mode; //todo: permission system
+            stbufm->st_mode =  dirs[i].mode; //todo: permission system
 
             free(dirs);
             return 0;
@@ -146,6 +152,7 @@ fcfs_readdir(   const char *path,
         st->st_ctime    = dirs[i].create_date;
         st->st_nlink    = args->fs_table->entrys[dirs[i].file_id].link_count;
         st->st_mode     = dirs[i].mode; //todo: permission system
+
         filler(buf, dirs[i].name, st, 0, 0);
     }
 
@@ -166,17 +173,29 @@ fcfs_mkdir(const char *path, mode_t mode) {
     memcpy(tmp, dirs, sizeof(fcfs_dir_entry_t) * dirs_len);
     free(dirs);
 
-    int p_len = strlen(fcfs_getattr_cache.path);
+    int new_fid = fcfs_get_free_fid(args);
+    if(new_fid <= 0) {
+        return -ENOENT;
+    }
 
-    tmp[dirs_len].file_id       = 0; //set free file id
-    tmp[dirs_len].mode          = mode;
+    fcfs_alloc(args, new_fid);
+    tmp[dirs_len].file_id       = new_fid; //set free file id
+    tmp[dirs_len].mode          = 0040000 | mode;
     tmp[dirs_len].create_date   = time(NULL);
     tmp[dirs_len].access_date   = time(NULL);
     tmp[dirs_len].change_date   = time(NULL);
-    strcpy(tmp[dirs_len + 1].name, path + p_len);
+
+    int p_len = strlen(path);
+    while(path[p_len] != '/')
+        p_len--;
+    p_len += 1;
+    strcpy(tmp[dirs_len].name, path + p_len);
 
     DEBUG("old dir len = %d", dirs_len);
     DEBUG("new dir len = %d", dirs_len + 1);
+    DEBUG("name        = %s", path + p_len);
+
+    fcfs_write_directory(args, fcfs_getattr_cache.fid, tmp, dirs_len + 1);
 
     return 0;
 }
