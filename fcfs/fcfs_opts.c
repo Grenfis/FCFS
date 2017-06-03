@@ -14,6 +14,9 @@
 #include "debug.h"
 #include "fcfs_mount.h"
 #include "utils.h"
+#include "fcfs_cache.h"
+
+static fcfs_path_cache_t *pcache = NULL;
 
 static fcfs_getattr_bentry_t fcfs_getattr_cache = {
     .path   = NULL,
@@ -39,6 +42,8 @@ fcfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
 
     fcfs_getattr_cache.path = calloc(1, FCFS_MAX_FILE_NAME_LENGTH);
     strcpy(fcfs_getattr_cache.path, "/");
+
+    pcache = fcfs_pcache_create();
     return (void*)args;
 }
 
@@ -54,6 +59,7 @@ fcfs_destroy(void *a) {
     fclose(args->dev);
 
     free(fcfs_getattr_cache.path);
+    fcfs_pcache_destroy(pcache);
 }
 
 int
@@ -79,9 +85,13 @@ fcfs_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi) {
     //if requested path is not match with old path
     //then update path in cache
     if(!pathcmp(fcfs_getattr_cache.path, path)) {
-        strcpy(fcfs_getattr_cache.path, "/");
-        fcfs_getattr_cache.fid = 0;
-        //todo: при / и /12/1 выходит что fid = 0 а не 1 => пройти весь путь
+        //delete last part of path
+        int bl = get_parrent_path(path);
+        bl = bl == 0 ? 1: bl;
+        memcpy(fcfs_getattr_cache.path, path, bl);
+        fcfs_getattr_cache.path[bl + 1] = '\0';
+        //check file path in cache
+        fcfs_pcache_get(pcache, &fcfs_getattr_cache);
         DEBUG("cache updated");
     }
     //get directory content
@@ -93,9 +103,7 @@ fcfs_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi) {
         return -ENOENT;
     }
 
-    int p_len = strlen(path);
-    while(path[p_len] != '/')
-        p_len--;
+    int p_len = get_parrent_path(path);
     p_len += 1;
 
     for(size_t i = 0; i < dirs_len; ++i) {
@@ -105,8 +113,9 @@ fcfs_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi) {
             stbufm->st_mtime = dirs[i].change_date;
             stbufm->st_ctime = dirs[i].create_date;
 
-            fcfs_getattr_cache.fid = dirs[i].file_id;;
+            fcfs_getattr_cache.fid = dirs[i].file_id;
             strcpy(fcfs_getattr_cache.path, path);
+            fcfs_pcache_add(pcache, &fcfs_getattr_cache);
 
             stbufm->st_nlink = args->fs_table->entrys[dirs[i].file_id].link_count;
             stbufm->st_mode =  dirs[i].mode; //todo: permission system
@@ -185,9 +194,7 @@ fcfs_mkdir(const char *path, mode_t mode) {
     tmp[dirs_len].access_date   = time(NULL);
     tmp[dirs_len].change_date   = time(NULL);
 
-    int p_len = strlen(path);
-    while(path[p_len] != '/')
-        p_len--;
+    int p_len = get_parrent_path(path);
     p_len += 1;
     strcpy(tmp[dirs_len].name, path + p_len);
 

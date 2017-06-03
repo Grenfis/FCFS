@@ -42,15 +42,4 @@ fcfs_read(  const char *path,
             off_t offset,
             struct fuse_file_info *fi);
 
-
-typedef struct fcfs_getattr_bentry {
-    char *path;
-    int fid;
-} fcfs_getattr_bentry_t;
-
-typedef struct fcfs_path_cache {
-    char pos;
-    fcfs_getattr_bentry_t entrys[50];
-} fcfs_path_cacche_t;
-
 #endif

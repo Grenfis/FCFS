@@ -41,3 +41,11 @@ pathcmp(const char *a, const char *b) {
     free(tmp);
     return 1;
 }
+
+int
+get_parrent_path(const char *path) {
+    int p_len = strlen(path);
+    while(path[p_len] != '/')
+        p_len--;
+    return p_len;
+}
