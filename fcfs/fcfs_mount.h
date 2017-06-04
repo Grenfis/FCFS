@@ -39,6 +39,9 @@ int
 fcfs_alloc(fcfs_args_t *args, int fid);
 
 int
+fcfs_init_dir(fcfs_args_t *args, int fid);
+
+int
 fcfs_get_file_size(fcfs_args_t *args, int fid);
 
 static inline int

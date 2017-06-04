@@ -1,7 +1,7 @@
 #ifndef FCFS_CACHE_H
 #define FCFS_CACHE_H
 
-#define FCFS_PATH_CACHE_SZ 25
+#define FCFS_PATH_CACHE_SZ 1000
 
 typedef struct fcfs_getattr_bentry {
     char *path;

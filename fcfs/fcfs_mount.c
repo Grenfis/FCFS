@@ -150,7 +150,7 @@ fcfs_write_bitmap(fcfs_args_t *args) {
     int lblk_sz = args->fs_head->phy_block_size * args->fs_head->block_size;
     int btm_blk_len = args->fs_head->bitmap_count * lblk_sz;
     char *blk_buf = calloc(1, btm_blk_len);
-    memcpy(blk_buf, args->fs_bitmap, args->fs_head->cluster_count);
+    memcpy(blk_buf, args->fs_bitmap, args->fs_head->cluster_count / 8.0);
 
     int res = fseek(args->dev, lblk_sz, SEEK_SET);
     if(res == 1L) {
@@ -175,7 +175,8 @@ fcfs_write_table(fcfs_args_t *args) {
     int tbl_blk_len = args->fs_head->table_count  * lblk_sz;
 
     char *blk_buf = calloc(1, tbl_blk_len);
-    memcpy(blk_buf, args->fs_table, tbl_blk_len);
+    DEBUG("fcfs_table len %lu", sizeof(fcfs_table_t));
+    memcpy(blk_buf, args->fs_table, sizeof(fcfs_table_t));
 
     int res = fseek(args->dev, lblk_sz + btm_blk_len, SEEK_SET);
     if(res == 1L) {
@@ -248,16 +249,16 @@ get_blocks(fcfs_block_list_t *blist, int fid, int *ret_sz) {
     DEBUG();
     *ret_sz = 0;
     int *res = NULL;
-    for(size_t i = 1; i < FCFS_BLOKS_PER_CLUSTER - 1; ++i) {
+    for(size_t i = 0; i < FCFS_BLOKS_PER_CLUSTER - 1; ++i) {
         if(fid == blist->entrys[i].file_id) {
             *ret_sz += 1;
         }
     }
     res = calloc(1, *ret_sz * sizeof(int));
     int k = 0;
-    for(size_t i = 1; i < FCFS_BLOKS_PER_CLUSTER - 1; ++i) {
+    for(size_t i = 0; i < FCFS_BLOKS_PER_CLUSTER - 1; ++i) {
         if(fid == blist->entrys[i].file_id) {
-            res[k] = i;
+            res[k] = i + 1;
             k += 1;
          }
     }
@@ -349,19 +350,21 @@ fcfs_get_free_cluster(fcfs_args_t *args) {
     DEBUG();
     unsigned char *bitmap = args->fs_bitmap;
     int btm_len = args->fs_head->cluster_count;
-    for(size_t i = 1; i < btm_len; ++i) {
+    for(size_t i = 0; i < btm_len; ++i) {
         unsigned char cs = bitmap[i];
-        if(cs == 1)
+        if(cs == 255)
             continue;
         int j = 0;
         for(; j < 8; ++j) {
+            if(i == 0 && j == 0)
+                continue;
             unsigned char tmp = cs;
-            tmp &= mask[i];
-            tmp >>= mask_off[i];
-            if(tmp == 0)
-                break;
+            tmp &= mask[j];
+            tmp >>= mask_off[j];
+            if(tmp == 0) {
+                return i * 8 + j;
+            }
         }
-        return i * 8 + j;
     }
     return -1;
 }
@@ -370,13 +373,14 @@ int
 fcfs_write_directory(fcfs_args_t *args, int fid, fcfs_dir_entry_t *ent, int len) {
     DEBUG();
     int lblk_sz = args->fs_head->block_size * args->fs_head->phy_block_size;
-    int blk_cnt = to_block_count(sizeof(unsigned) + len, lblk_sz);
+    int blk_cnt = to_block_count(sizeof(unsigned) + len * sizeof(fcfs_dir_entry_t), lblk_sz);
 
     char *blk_buf = calloc(1, blk_cnt * lblk_sz);
     int cur_off_buf = 0;
     memcpy(blk_buf, &len, sizeof(unsigned));
     memcpy(blk_buf + sizeof(unsigned), ent, sizeof(fcfs_dir_entry_t) * len);
     DEBUG("lbk cnt  %d", blk_cnt);
+    DEBUG("data len %lu", sizeof(fcfs_dir_entry_t) * len);
 
     size_t i = 0;
     for(;i < FCFS_MAX_CLASTER_COUNT_PER_FILE - 1; ++i) {
@@ -410,8 +414,8 @@ fcfs_write_directory(fcfs_args_t *args, int fid, fcfs_dir_entry_t *ent, int len)
         fcfs_block_list_t *bl = fcfs_get_claster_table(args, cl_free);
         int cblk_cnt = 0;
         int *cblks = get_blocks(bl, 0, &cblk_cnt);
-        for(size_t j = 0; i < cblk_cnt; ++j) {
-            bl->entrys[cblks[i]].file_id = fid;
+        for(size_t j = 0; j < cblk_cnt; ++j) {
+            bl->entrys[cblks[j] - 1].file_id = fid;
             int bid = cblks[j];
             fcfs_write_block(args, cl_free, bid, blk_buf + cur_off_buf, lblk_sz);
             cur_off_buf += lblk_sz;
@@ -464,7 +468,13 @@ fcfs_alloc(fcfs_args_t *args, int fid) {
     fcfs_block_list_t *bl = fcfs_get_claster_table(args, cid);
     int blk_cnt = 0;
     int *blks = get_blocks(bl, 0, &blk_cnt);
-    bl->entrys[blks[0]].file_id = fid;
+    if(blk_cnt == 0) {
+        ERROR("cluster is not free");
+        free(blks);
+        free(bl);
+        return -1;
+    }
+    bl->entrys[blks[0] - 1].file_id = fid;
     fcfs_write_block(args, cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
 
     if(update_bitmap(args, bl, cid))
@@ -497,4 +507,25 @@ fcfs_get_file_size(fcfs_args_t *args, int fid) {
             break;
     }
     return block_cnt * lblk_sz;
+}
+
+int
+fcfs_init_dir(fcfs_args_t *args, int fid) {
+    DEBUG();
+    fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];
+
+    fcfs_dir_header_t dh;
+    memset(&dh, 0, sizeof(fcfs_dir_header_t));
+
+    int cid = tentry->clusters[0];
+    fcfs_block_list_t *bl = fcfs_get_claster_table(args, cid);
+
+    int b_len = 0;
+    int *blks = get_blocks(bl, fid, &b_len);
+
+    int res = fcfs_write_block(args, cid, blks[0], (char*)&dh, sizeof(fcfs_dir_header_t));
+
+    free(bl);
+    free(blks);
+    return res;
 }

@@ -38,7 +38,8 @@ int main(int argc, char *argv[]) {
     fs_head->file_count     = 1; //for root dir
 
     fs_head->block_count    = (unsigned long)(fs_head->phy_block_count / FCFS_BLOCK_SIZE);
-    fs_head->table_count    = (unsigned short)ceil(sizeof(struct fcfs_table) / (fs_head->block_size * fs_head->phy_block_size));
+    fs_head->table_count    = (unsigned short)ceil(sizeof(struct fcfs_table) /
+    (fs_head->block_size * fs_head->phy_block_size)) + 1;
     fs_head->cluster_count  = (unsigned long)floor((fs_head->block_count
         - fs_head->table_count - 1)
         / fs_head->cluster_size); //needed for first counting
