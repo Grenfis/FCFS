@@ -8,7 +8,7 @@
 #include <debug.h>
 
 int
-fcfs_remove_file(fcfs_args_t *args, int fid) {
+dev_rm_file(fcfs_args_t *args, int fid) {
     DEBUG();
     if(fid == 0)
         return -1;
@@ -23,21 +23,21 @@ fcfs_remove_file(fcfs_args_t *args, int fid) {
         if(cid == 0)
             break;
 
-        fcfs_block_list_t *bl = fcfs_get_claster_table(args, cid);
+        fcfs_block_list_t *bl = dev_read_ctable(args, cid);
         int blist_cnt = 0;
-        int *blist = get_blocks(bl, fid, &blist_cnt);
+        int *blist = dev_get_blocks(bl, fid, &blist_cnt);
 
         for(size_t j = 0; j < blist_cnt; ++j) {
             bl->entrys[blist[j] - 1].file_id = 0;
         }
 
         if(blist_cnt != 0) {
-            fcfs_write_block(args, cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
-            if(!update_bitmap(args, bl, cid))
-                fcfs_write_bitmap(args);
+            dev_write_block(args, cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
+            if(!dev_upd_bitmap(args, bl, cid))
+                dev_write_bitmap(args);
         }
     }
 
-    fcfs_write_table(args);
+    dev_write_table(args);
     return 0;
 }

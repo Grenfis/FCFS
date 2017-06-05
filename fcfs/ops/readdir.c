@@ -14,7 +14,7 @@
 #include <debug.h>
 
 int
-fcfs_readdir(   const char *path,
+ops_readdir(   const char *path,
                 void *buf,
                 fuse_fill_dir_t filler,
                 off_t offset,
@@ -30,7 +30,7 @@ fcfs_readdir(   const char *path,
     //get directory content
     int dirs_len = 0;
     int fid = fcfs_get_fid(path);
-    fcfs_dir_entry_t *dirs = fcfs_read_directory(args, fid, &dirs_len);
+    fcfs_dir_entry_t *dirs = dev_read_dir(args, fid, &dirs_len);
     if(dirs == NULL || dirs_len == 0) {
         if(dirs != NULL)
             free(dirs);

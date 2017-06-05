@@ -20,7 +20,7 @@ static unsigned char mask[] = {
 static int mask_off[] = {7,6,5,4,3,2,1,0};
 
 char
-update_bitmap(fcfs_args_t *args, fcfs_block_list_t *bl, int cid) {
+dev_upd_bitmap(fcfs_args_t *args, fcfs_block_list_t *bl, int cid) {
     DEBUG();
     char has_free = 0;
     char being_full = 0;
@@ -53,7 +53,7 @@ update_bitmap(fcfs_args_t *args, fcfs_block_list_t *bl, int cid) {
 }
 
 int
-fcfs_get_free_cluster(fcfs_args_t *args) {
+dev_free_cluster(fcfs_args_t *args) {
     DEBUG();
     unsigned char *bitmap = args->fs_bitmap;
     int btm_len = args->fs_head->cluster_count;
@@ -77,7 +77,7 @@ fcfs_get_free_cluster(fcfs_args_t *args) {
 }
 
 int
-fcfs_get_free_fid(fcfs_args_t *args) {
+dev_free_fid(fcfs_args_t *args) {
     DEBUG();
     fcfs_table_t *table = args->fs_table;
     int tbl_len = args->fs_head->table_len;
@@ -89,11 +89,11 @@ fcfs_get_free_fid(fcfs_args_t *args) {
 }
 
 int
-fcfs_alloc(fcfs_args_t *args, int fid) {
+dev_file_alloc(fcfs_args_t *args, int fid) {
     DEBUG();
     memset(&args->fs_table->entrys[fid], 0, sizeof(fcfs_table_entry_t));
 
-    int cid = fcfs_get_free_cluster(args);
+    int cid = dev_free_cluster(args);
     if(cid <= 0 ) {
         ERROR("not enouth clusters");
         return -1;
@@ -103,9 +103,9 @@ fcfs_alloc(fcfs_args_t *args, int fid) {
     args->fs_table->entrys[fid].link_count = 1;
     args->fs_table->entrys[fid].clusters[0] = cid;
 
-    fcfs_block_list_t *bl = fcfs_get_claster_table(args, cid);
+    fcfs_block_list_t *bl = dev_read_ctable(args, cid);
     int blk_cnt = 0;
-    int *blks = get_blocks(bl, 0, &blk_cnt);
+    int *blks = dev_get_blocks(bl, 0, &blk_cnt);
     if(blk_cnt == 0) {
         ERROR("cluster is not free");
         free(blks);
@@ -113,11 +113,11 @@ fcfs_alloc(fcfs_args_t *args, int fid) {
         return -1;
     }
     bl->entrys[blks[0] - 1].file_id = fid;
-    fcfs_write_block(args, cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
+    dev_write_block(args, cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
 
-    if(update_bitmap(args, bl, cid))
-        fcfs_write_bitmap(args);
-    fcfs_write_table(args);
+    if(dev_upd_bitmap(args, bl, cid))
+        dev_write_bitmap(args);
+    dev_write_table(args);
 
     free(bl);
     free(blks);
@@ -125,7 +125,7 @@ fcfs_alloc(fcfs_args_t *args, int fid) {
 }
 
 int
-fcfs_get_file_size(fcfs_args_t *args, int fid) {
+dev_file_size(fcfs_args_t *args, int fid) {
     DEBUG();
     int block_cnt = 0;
     int lblk_sz = args->fs_head->block_size * args->fs_head->phy_block_size;
@@ -134,9 +134,9 @@ fcfs_get_file_size(fcfs_args_t *args, int fid) {
         int cid = tentry->clusters[i];
         if(fid != 0 && cid == 0)
             break;
-        fcfs_block_list_t *ctable = fcfs_get_claster_table(args, cid);
+        fcfs_block_list_t *ctable = dev_read_ctable(args, cid);
         int blist_len = 0;
-        int *blist = get_blocks(ctable, fid, &blist_len);
+        int *blist = dev_get_blocks(ctable, fid, &blist_len);
         block_cnt += blist_len;
 
         free(ctable);

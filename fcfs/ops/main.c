@@ -14,12 +14,12 @@
 #include <debug.h>
 
 void *
-fcfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
+ops_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
     DEBUG("");
     fcfs_args_t *args = fcfs_get_args();
     args->dev = fopen(args->p_dev, "w+b");
 
-    int res = fcfs_mount(args);
+    int res = dev_mount(args);
     if(res != 0) {
         ERROR("when mounting");
         exit(-1);
@@ -29,7 +29,7 @@ fcfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
 }
 
 void
-fcfs_destroy(void *a) {
+ops_destroy(void *a) {
     DEBUG("");
     fcfs_args_t *args = (fcfs_args_t*)a;
     free(args->p_dev);

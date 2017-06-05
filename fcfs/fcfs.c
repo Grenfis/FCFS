@@ -23,14 +23,14 @@ enum {
 };
 
 static struct fuse_operations fcfs_opts = {
-    .getattr    = fcfs_getattr,
-    .readdir    = fcfs_readdir,
-    .mkdir      = fcfs_mkdir,
-    .rmdir      = fcfs_rmdir,
-    .open       = fcfs_open,
-    .read       = fcfs_read,
-    .init       = fcfs_init,
-    .destroy    = fcfs_destroy,
+    .getattr    = ops_getattr,
+    .readdir    = ops_readdir,
+    .mkdir      = ops_mkdir,
+    .rmdir      = ops_rmdir,
+    .open       = ops_open,
+    .read       = ops_read,
+    .init       = ops_init,
+    .destroy    = ops_destroy,
 }; //file system operations
 static struct fuse_opt fcfs_opt[] = {
     FUSE_OPT_KEY("-V", FCFS_OPT_VER),

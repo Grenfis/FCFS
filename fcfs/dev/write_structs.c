@@ -8,7 +8,7 @@
 #include <debug.h>
 
 int
-fcfs_write_header(fcfs_args_t *args) {
+dev_write_header(fcfs_args_t *args) {
     DEBUG("");
     int lblk_sz = args->fs_head->phy_block_size * args->fs_head->block_size;
     char *blk_buf = calloc(1, lblk_sz);
@@ -30,7 +30,7 @@ fcfs_write_header(fcfs_args_t *args) {
 }
 
 int
-fcfs_write_bitmap(fcfs_args_t *args) {
+dev_write_bitmap(fcfs_args_t *args) {
     DEBUG("");
     int lblk_sz = args->fs_head->phy_block_size * args->fs_head->block_size;
     int btm_blk_len = args->fs_head->bitmap_count * lblk_sz;
@@ -53,7 +53,7 @@ fcfs_write_bitmap(fcfs_args_t *args) {
 }
 
 int
-fcfs_write_table(fcfs_args_t *args) {
+dev_write_table(fcfs_args_t *args) {
     DEBUG("");
     int lblk_sz = args->fs_head->phy_block_size * args->fs_head->block_size;
     int btm_blk_len = args->fs_head->bitmap_count * lblk_sz;

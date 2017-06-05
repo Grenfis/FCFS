@@ -14,7 +14,7 @@
 #include <debug.h>
 
 int
-fcfs_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi) {
+ops_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi) {
     DEBUG("path = %s", path);
     fcfs_args_t *args = fcfs_get_args();
     //set default data of file
@@ -29,14 +29,14 @@ fcfs_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi) {
         stbufm->st_mode = 0040000 | 0777; //todo: permission system
         stbufm->st_nlink = 2;
 
-        //fcfs_getattr_cache.fid = 0;
-        //strcpy(fcfs_getattr_cache.path, path);
+        //ops_getattr_cache.fid = 0;
+        //strcpy(ops_getattr_cache.path, path);
 
         return 0;
     }
     //get directory content
     int dirs_len = 0;
-    fcfs_dir_entry_t *dirs = fcfs_read_directory(args, fcfs_get_pfid(path), &dirs_len);
+    fcfs_dir_entry_t *dirs = dev_read_dir(args, fcfs_get_pfid(path), &dirs_len);
     if(dirs == NULL || dirs_len == 0) {
         if(dirs != NULL)
             free(dirs);
@@ -54,7 +54,7 @@ fcfs_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi) {
             stbufm->st_ctime = dirs[i].create_date;
             stbufm->st_nlink = args->fs_table->entrys[dirs[i].file_id].link_count;
             stbufm->st_mode =  dirs[i].mode;
-            stbufm->st_size = fcfs_get_file_size(args, dirs[i].file_id);
+            stbufm->st_size = dev_file_size(args, dirs[i].file_id);
             stbufm->st_dev = dirs[i].file_id;
 
             free(dirs);

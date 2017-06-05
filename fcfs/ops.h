@@ -5,19 +5,19 @@
 #include <fcfs_structs.h>
 
 void *
-fcfs_init(  struct fuse_conn_info *conn,
+ops_init(  struct fuse_conn_info *conn,
             struct fuse_config *cfg);
 
 void
-fcfs_destroy(void *args);
+ops_destroy(void *args);
 
 int
-fcfs_getattr(   const char *path,
+ops_getattr(   const char *path,
                 struct stat *stbuf,
                 struct fuse_file_info *fi);
 
 int
-fcfs_readdir(   const char *path,
+ops_readdir(   const char *path,
                 void *buf,
                 fuse_fill_dir_t filler,
                 off_t offset,
@@ -25,18 +25,18 @@ fcfs_readdir(   const char *path,
                 enum fuse_readdir_flags flags);
 
 int
-fcfs_mkdir( const char *path,
+ops_mkdir( const char *path,
             mode_t mode);
 
 int
-fcfs_rmdir(const char *path);
+ops_rmdir(const char *path);
 
 int
-fcfs_open(  const char *path,
+ops_open(  const char *path,
             struct fuse_file_info *fi);
 
 int
-fcfs_read(  const char *path,
+ops_read(  const char *path,
             char *buf,
             size_t size,
             off_t offset,

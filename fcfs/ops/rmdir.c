@@ -14,13 +14,13 @@
 #include <debug.h>
 
 int
-fcfs_rmdir(const char *path) {
+ops_rmdir(const char *path) {
     DEBUG("path %s", path);
 
     fcfs_args_t *args = fcfs_get_args();
     int fid = fcfs_get_fid(path);
-    fcfs_remove_file(args, fid);
-    fcfs_remove_from_dir(args, fcfs_get_pfid(path), fid);
+    dev_rm_file(args, fid);
+    dev_rm_from_dir(args, fcfs_get_pfid(path), fid);
 
     return 0;
 }

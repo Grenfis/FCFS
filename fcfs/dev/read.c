@@ -8,7 +8,7 @@
 #include <debug.h>
 
 fcfs_block_list_t *
-fcfs_get_claster_table(fcfs_args_t *args, int id) {
+dev_read_ctable(fcfs_args_t *args, int id) {
     DEBUG();
     fcfs_block_list_t *table = calloc(1, sizeof(fcfs_block_list_t));
     int lblk_sz = args->fs_head->phy_block_size * args->fs_head->block_size;
@@ -34,7 +34,7 @@ fcfs_get_claster_table(fcfs_args_t *args, int id) {
 }
 
 char *
-fcfs_read_block(fcfs_args_t *args, int cid, int bid) {
+dev_read_block(fcfs_args_t *args, int cid, int bid) {
     DEBUG();
     int lblk_sz = args->fs_head->phy_block_size * args->fs_head->block_size;
     int dta_beg = args->fs_head->dta_beg * lblk_sz;
@@ -58,7 +58,7 @@ fcfs_read_block(fcfs_args_t *args, int cid, int bid) {
 }
 
 int *
-get_blocks(fcfs_block_list_t *blist, int fid, int *ret_sz) {
+dev_get_blocks(fcfs_block_list_t *blist, int fid, int *ret_sz) {
     DEBUG();
     *ret_sz = 0;
     int *res = NULL;

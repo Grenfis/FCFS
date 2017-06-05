@@ -50,7 +50,7 @@ read_table(FILE *dev, int bytes) {
 }
 
 int
-fcfs_mount(fcfs_args_t *args) {
+dev_mount(fcfs_args_t *args) {
     DEBUG("");
 
     dsc_info_t *d_info = calloc(1, sizeof(dsc_info_t));

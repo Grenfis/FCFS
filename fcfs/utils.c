@@ -5,6 +5,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <string.h>
+#include <math.h>
 
 #include <debug.h>
 
@@ -48,4 +49,9 @@ get_parrent_path(const char *path) {
     while(path[p_len] != '/')
         p_len--;
     return p_len;
+}
+
+int
+to_block_count(int data_len, int lblk_sz) {
+    return ceil(data_len / (double)lblk_sz);
 }

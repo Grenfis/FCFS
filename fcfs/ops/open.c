@@ -14,7 +14,7 @@
 #include <debug.h>
 
 int
-fcfs_open(const char *path, struct fuse_file_info *fi) {
+ops_open(const char *path, struct fuse_file_info *fi) {
     DEBUG("");
     return 0;
 }
