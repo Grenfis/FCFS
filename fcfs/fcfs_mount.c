@@ -23,19 +23,33 @@ static char
 update_bitmap(fcfs_args_t *args, fcfs_block_list_t *bl, int cid) {
     DEBUG();
     char has_free = 0;
+    char being_full = 0;
+
     for(size_t i = 0; i < FCFS_BLOKS_PER_CLUSTER - 1; ++i) {
         if(bl->entrys[i].file_id == 0) {
             has_free = 1;
             break;
         }
     }
-    if(has_free == 0) {
-        int byte = cid / 8.0;
-        int num  = cid % 8;
+
+    int byte = cid / 8.0;
+    int num  = cid % 8;
+
+    unsigned char cs = args->fs_bitmap[byte];
+    cs &= mask[num];
+    cs >>= mask_off[num];
+    if(cs == 1)
+        being_full = 1;
+
+    if(has_free == 0 && !being_full) {
         args->fs_bitmap[byte] |= mask[num];
-        return 1;
+        return 0;
+    }else if(has_free == 1 && being_full){
+        args->fs_bitmap[byte] &= ~(mask[num]);
+        return 0;
     }
-    return 0;
+
+    return 1;
 }
 
 static fcfs_head_t *
@@ -455,9 +469,11 @@ fcfs_get_free_fid(fcfs_args_t *args) {
 int
 fcfs_alloc(fcfs_args_t *args, int fid) {
     DEBUG();
+    memset(&args->fs_table->entrys[fid], 0, sizeof(fcfs_table_entry_t));
+
     int cid = fcfs_get_free_cluster(args);
     if(cid <= 0 ) {
-        DEBUG("not enouth clusters");
+        ERROR("not enouth clusters");
         return -1;
     }
 
@@ -528,4 +544,55 @@ fcfs_init_dir(fcfs_args_t *args, int fid) {
     free(bl);
     free(blks);
     return res;
+}
+
+int
+fcfs_remove_file(fcfs_args_t *args, int fid) {
+    DEBUG();
+    if(fid == 0)
+        return -1;
+
+    fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];
+    if(tentry->link_count == 0)
+        return -1;
+
+    tentry->link_count = 0;
+    for(size_t i = 0; i < FCFS_MAX_CLASTER_COUNT_PER_FILE - 1; ++i) {
+        int cid = tentry->clusters[i];
+        if(cid == 0)
+            break;
+
+        fcfs_block_list_t *bl = fcfs_get_claster_table(args, cid);
+        int blist_cnt = 0;
+        int *blist = get_blocks(bl, fid, &blist_cnt);
+
+        for(size_t j = 0; j < blist_cnt; ++j) {
+            bl->entrys[blist[j] - 1].file_id = 0;
+        }
+
+        if(blist_cnt != 0) {
+            fcfs_write_block(args, cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
+            if(!update_bitmap(args, bl, cid))
+                fcfs_write_bitmap(args);
+        }
+    }
+
+    fcfs_write_table(args);
+    return 0;
+}
+
+int
+fcfs_remove_from_dir(fcfs_args_t *args, int fid, int del_id) {
+    int dirs_len = 0;
+    fcfs_dir_entry_t *dirs = fcfs_read_directory(args, fid, &dirs_len);
+
+    for(size_t i = 0; i < dirs_len; ++i) {
+        if(dirs[i].file_id == del_id) {
+            memset(dirs[i].name, 0, FCFS_MAX_FILE_NAME_LENGTH);
+        }
+    }
+
+    fcfs_write_directory(args, fid, dirs, dirs_len + 1);
+
+    return 0;
 }

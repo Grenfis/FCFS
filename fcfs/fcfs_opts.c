@@ -14,18 +14,28 @@
 #include "debug.h"
 #include "fcfs_mount.h"
 #include "utils.h"
-#include "fcfs_cache.h"
-
-static fcfs_path_cache_t *pcache = NULL;
-
-static fcfs_getattr_bentry_t fcfs_getattr_cache = {
-    .path   = NULL,
-    .fid    = 0
-};
 
 static fcfs_args_t *
 fcfs_get_args(void) {
     return (fcfs_args_t*)fuse_get_context()->private_data;
+}
+
+static int
+fcfs_get_fid(const char *path) {
+    struct stat st;
+    fcfs_getattr(path, &st, NULL);
+    return st.st_dev;
+}
+
+static int
+fcfs_get_pfid(const char *path) {
+    int p_len = get_parrent_path(path);
+    p_len = p_len == 0 ? 1: p_len;
+    char *np = calloc(1, p_len);
+    memcpy(np, path, p_len);
+    int res = fcfs_get_fid(np);
+    free(np);
+    return res;
 }
 
 void *
@@ -40,10 +50,6 @@ fcfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
         exit(-1);
     }
 
-    fcfs_getattr_cache.path = calloc(1, FCFS_MAX_FILE_NAME_LENGTH);
-    strcpy(fcfs_getattr_cache.path, "/");
-
-    pcache = fcfs_pcache_create();
     return (void*)args;
 }
 
@@ -52,14 +58,17 @@ fcfs_destroy(void *a) {
     DEBUG("");
     fcfs_args_t *args = (fcfs_args_t*)a;
     free(args->p_dev);
+    DEBUG("deleted p_dev");
     free(args->passwd);
+    DEBUG("deleted passwd");
     free(args->fs_head);
+    DEBUG("deleted fs_head");
     free(args->fs_bitmap);
+    DEBUG("deleted fs_bitmap");
     free(args->fs_table);
+    DEBUG("deleted fs_table");
     fclose(args->dev);
-
-    free(fcfs_getattr_cache.path);
-    fcfs_pcache_destroy(pcache);
+    DEBUG("deleted dev");
 }
 
 int
@@ -74,30 +83,18 @@ fcfs_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi) {
     stbufm->st_mtime = time(NULL);
     //if it's root return constant data
     if(strcmp(path, "/") == 0) {
+        stbufm->st_dev = 0; //file id
         stbufm->st_mode = 0040000 | 0777; //todo: permission system
         stbufm->st_nlink = 2;
 
-        fcfs_getattr_cache.fid = 0;
-        strcpy(fcfs_getattr_cache.path, path);
+        //fcfs_getattr_cache.fid = 0;
+        //strcpy(fcfs_getattr_cache.path, path);
 
         return 0;
     }
-    //if requested path is not match with old path
-    //then update path in cache
-    if(!pathcmp(fcfs_getattr_cache.path, path)) {
-        //delete last part of path
-        DEBUG("old cache %s %d", fcfs_getattr_cache.path, fcfs_getattr_cache.fid);
-        int bl = get_parrent_path(path);
-        bl = bl == 0 ? 1: bl;
-        memcpy(fcfs_getattr_cache.path, path, bl);
-        fcfs_getattr_cache.path[bl] = '\0';
-        //check file path in cache
-        fcfs_pcache_get(pcache, &fcfs_getattr_cache);
-        DEBUG("cache updated");
-    }
     //get directory content
     int dirs_len = 0;
-    fcfs_dir_entry_t *dirs = fcfs_read_directory(args, fcfs_getattr_cache.fid, &dirs_len);
+    fcfs_dir_entry_t *dirs = fcfs_read_directory(args, fcfs_get_pfid(path), &dirs_len);
     if(dirs == NULL || dirs_len == 0) {
         if(dirs != NULL)
             free(dirs);
@@ -113,14 +110,10 @@ fcfs_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi) {
             stbufm->st_atime = dirs[i].access_date;
             stbufm->st_mtime = dirs[i].change_date;
             stbufm->st_ctime = dirs[i].create_date;
-
-            fcfs_getattr_cache.fid = dirs[i].file_id;
-            strcpy(fcfs_getattr_cache.path, path);
-            fcfs_pcache_add(pcache, &fcfs_getattr_cache);
-
             stbufm->st_nlink = args->fs_table->entrys[dirs[i].file_id].link_count;
             stbufm->st_mode =  dirs[i].mode;
             stbufm->st_size = fcfs_get_file_size(args, dirs[i].file_id);
+            stbufm->st_dev = dirs[i].file_id;
 
             free(dirs);
             return 0;
@@ -147,7 +140,8 @@ fcfs_readdir(   const char *path,
     filler(buf, "..", NULL, 0, 0);
     //get directory content
     int dirs_len = 0;
-    fcfs_dir_entry_t *dirs = fcfs_read_directory(args, fcfs_getattr_cache.fid, &dirs_len);
+    int fid = fcfs_get_fid(path);
+    fcfs_dir_entry_t *dirs = fcfs_read_directory(args, fid, &dirs_len);
     if(dirs == NULL || dirs_len == 0) {
         if(dirs != NULL)
             free(dirs);
@@ -155,7 +149,9 @@ fcfs_readdir(   const char *path,
     }
 
     for(size_t i = 0; i < dirs_len; ++i) {
-        filler(buf, dirs[i].name, NULL, 0, 0);
+        //if(args->fs_table->entrys[dirs[i].file_id].link_count != 0)
+        if(strlen(dirs[i].name) != 0) //if entry is not deleted
+            filler(buf, dirs[i].name, NULL, 0, 0);
     }
 
     free(dirs);
@@ -169,7 +165,8 @@ fcfs_mkdir(const char *path, mode_t mode) {
     fcfs_args_t *args = fcfs_get_args();
     //get directory content
     int dirs_len = 0;
-    fcfs_dir_entry_t *dirs = fcfs_read_directory(args, fcfs_getattr_cache.fid, &dirs_len);
+    int pfid = fcfs_get_pfid(path);
+    fcfs_dir_entry_t *dirs = fcfs_read_directory(args, pfid, &dirs_len);
 
     fcfs_dir_entry_t *tmp = calloc(1, sizeof(fcfs_dir_entry_t) * (dirs_len + 1));
     memcpy(tmp, dirs, sizeof(fcfs_dir_entry_t) * dirs_len);
@@ -196,7 +193,7 @@ fcfs_mkdir(const char *path, mode_t mode) {
     DEBUG("new dir len = %d", dirs_len + 1);
     DEBUG("name        = %s", path + p_len);
 
-    fcfs_write_directory(args, fcfs_getattr_cache.fid, tmp, dirs_len + 1);
+    fcfs_write_directory(args, pfid, tmp, dirs_len + 1);
 
     return 0;
 }
@@ -204,6 +201,12 @@ fcfs_mkdir(const char *path, mode_t mode) {
 int
 fcfs_rmdir(const char *path) {
     DEBUG("path %s", path);
+
+    fcfs_args_t *args = fcfs_get_args();
+    int fid = fcfs_get_fid(path);
+    fcfs_remove_file(args, fid);
+    fcfs_remove_from_dir(args, fcfs_get_pfid(path), fid);
+    
     return 0;
 }
 

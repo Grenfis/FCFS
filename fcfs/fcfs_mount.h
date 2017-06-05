@@ -44,6 +44,12 @@ fcfs_init_dir(fcfs_args_t *args, int fid);
 int
 fcfs_get_file_size(fcfs_args_t *args, int fid);
 
+int
+fcfs_remove_file(fcfs_args_t *args, int fid);
+
+int
+fcfs_remove_from_dir(fcfs_args_t *args, int fid, int del_id);
+
 static inline int
 to_block_count(int data_len, int lblk_sz) {
     return ceil(data_len / (double)lblk_sz);
