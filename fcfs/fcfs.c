@@ -22,7 +22,7 @@ enum {
     FCFS_OPT_DEV
 };
 
-static struct fuse_operations fcfs_opts = {
+static struct fuse_operations fcfs_ops = {
     .getattr    = ops_getattr,
     .readdir    = ops_readdir,
     .mkdir      = ops_mkdir,
@@ -32,6 +32,7 @@ static struct fuse_operations fcfs_opts = {
     .init       = ops_init,
     .destroy    = ops_destroy,
 }; //file system operations
+
 static struct fuse_opt fcfs_opt[] = {
     FUSE_OPT_KEY("-V", FCFS_OPT_VER),
     FUSE_OPT_KEY("--version", FCFS_OPT_VER),
@@ -40,6 +41,7 @@ static struct fuse_opt fcfs_opt[] = {
     FUSE_OPT_KEY("-p %s", FCFS_OPT_PASSWD),
     FUSE_OPT_KEY("-b %s", FCFS_OPT_DEV)
 };
+
 //input string format in s is "-arg=smth"
 char *
 get_opt(const char *s, int *len) {
@@ -128,5 +130,5 @@ main(int argc, char *argv[])
         DEBUG("argv[%lu] = %s", i, fu_args.argv[i]);
     }
     //run daemon
-    return fuse_main(fu_args.argc, fu_args.argv, &fcfs_opts, &fc_args);
+    return fuse_main(fu_args.argc, fu_args.argv, &fcfs_ops, &fc_args);
 }
