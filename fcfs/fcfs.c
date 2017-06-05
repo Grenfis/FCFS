@@ -11,7 +11,7 @@
 #include "fcfs.h"
 #include "debug.h"
 #include "utils.h"
-#include "fcfs_opts.h"
+#include "ops.h"
 
 #define PASSWD_BUF_LEN 255
 

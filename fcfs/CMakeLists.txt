@@ -14,7 +14,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 include_directories("/home/snippy/diploma/include/")
 link_directories("/home/snippy/diploma/lib/lib/")
 
-add_executable(fcfs fcfs.c utils.c fcfs_opts.c fcfs_mount.c)
+set(DEV dev/common.c dev/dir.c dev/file.c dev/mount.c dev/read.c dev/write_structs.c dev/write.c)
+set(OPS ops/common.c ops/getattr.c ops/main.c ops/mkdir.c ops/open.c ops/read.c ops/readdir.c ops/rmdir.c)
+add_executable(fcfs fcfs.c utils.c ${OPS} ${DEV})
+
 target_link_libraries(fcfs fcfs_lib)
 target_link_libraries(fcfs fuse3)
 #target_link_libraries(fcfs ${FUSE_LIBRARIES})

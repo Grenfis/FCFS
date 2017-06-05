@@ -1,5 +1,5 @@
-#ifndef FCFS_MOUNT_H
-#define FCFS_MOUNT_H
+#ifndef DEV_H
+#define DEV_H
 
 #include "fcfs.h"
 #include <fcfs_structs.h>
@@ -49,6 +49,21 @@ fcfs_remove_file(fcfs_args_t *args, int fid);
 
 int
 fcfs_remove_from_dir(fcfs_args_t *args, int fid, int del_id);
+
+char
+update_bitmap(fcfs_args_t *args, fcfs_block_list_t *bl, int cid);
+
+int *
+get_blocks(fcfs_block_list_t *blist, int fid, int *ret_sz);
+
+int
+fcfs_get_free_cluster(fcfs_args_t *args);
+
+int
+fcfs_get_file_size(fcfs_args_t *args, int fid);
+
+int
+fcfs_write_block(fcfs_args_t *args, int cid, int bid, char *data, int len);
 
 static inline int
 to_block_count(int data_len, int lblk_sz) {

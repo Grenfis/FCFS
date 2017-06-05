@@ -1,5 +1,5 @@
-#ifndef FCFS_OPTS_H
-#define FCFS_OPTS_H
+#ifndef OPS_H
+#define OPS_H
 
 #include <fuse3/fuse.h>
 #include <fcfs_structs.h>
