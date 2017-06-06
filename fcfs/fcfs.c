@@ -31,6 +31,11 @@ static struct fuse_operations fcfs_ops = {
     .read       = ops_read,
     .init       = ops_init,
     .destroy    = ops_destroy,
+    .create     = ops_create,
+    .unlink     = ops_unlink,
+    .utimens    = ops_utimens,
+    .chown      = ops_chown,
+    .truncate   = ops_truncate,
 }; //file system operations
 
 static struct fuse_opt fcfs_opt[] = {
