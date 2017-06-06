@@ -6,6 +6,13 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+typedef struct dev_blk_info {
+    unsigned cid;
+    unsigned char bid;
+    unsigned num;
+} dev_blk_info_t;
+
+
 int
 dev_mount(fcfs_args_t *args);
 
@@ -65,5 +72,11 @@ dev_write_block(fcfs_args_t *args, int cid, int bid, char *data, int len);
 
 int
 dev_create_file(fcfs_args_t *args, int pfid, int fid, const char *name, mode_t mode);
+
+dev_blk_info_t *
+dev_get_file_seq(fcfs_args_t *args, int fid, int *size);
+
+dev_blk_info_t *
+dev_free_blocks(fcfs_args_t *args, int count, int *size);
 
 #endif

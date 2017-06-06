@@ -45,6 +45,7 @@ typedef struct fcfs_table {
 //---------------------------------------CLUSTER-----------------------------------
 typedef struct fcfs_block_list_entry {
     unsigned        file_id;
+    unsigned        num;
 } fcfs_block_list_entry_t;
 
 typedef struct fcfs_block_list {

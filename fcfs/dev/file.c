@@ -106,3 +106,53 @@ dev_init_file(fcfs_args_t *args, int fid) {
     free(blks);
     return res;
 }
+
+dev_blk_info_t *
+dev_get_file_seq(fcfs_args_t *args, int fid, int *size) {
+    DEBUG();
+    fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];
+
+    dev_blk_info_t tmp[(FCFS_MAX_CLASTER_COUNT_PER_FILE - 1) * FCFS_BLOKS_PER_CLUSTER];
+    int k = 0;
+    for(size_t i = 0; i < FCFS_MAX_CLASTER_COUNT_PER_FILE - 1; ++i) {
+        int cid = tentry->clusters[i];
+        if(fid != 0 && cid == 0)
+            break;
+
+        fcfs_block_list_t *bl = dev_read_ctable(args, cid);
+        int b_len = 0;
+        int *blist = dev_get_blocks(bl, fid, &b_len);
+        for(size_t j = 0; j < b_len; ++j) {
+            tmp[k].cid = cid;
+            tmp[k].bid = blist[j];
+            tmp[k].num = bl->entrys[blist[j] - 1].num;
+            k++;
+        }
+
+        free(bl);
+        free(blist);
+
+        if(fid == 0)
+            break;
+    }
+
+    unsigned char flag = 1;
+    dev_blk_info_t fi;
+    while(flag) {
+        flag = 0;
+        for(size_t i = 1; i < k; ++i) {
+            if(tmp[i - 1].num > tmp[i].num) {
+                flag = 1;
+                memcpy(&fi, &tmp[i - 1], sizeof(dev_blk_info_t));
+                memcpy(&tmp[i - 1], &tmp[i], sizeof(dev_blk_info_t));
+                memcpy(&tmp[i], &fi, sizeof(dev_blk_info_t));
+            }
+        }
+    }
+
+    dev_blk_info_t *inf = calloc(1, sizeof(dev_blk_info_t) * k);
+    memcpy(inf, &tmp, sizeof(dev_blk_info_t) * k);
+
+    *size = k;
+    return inf;
+}

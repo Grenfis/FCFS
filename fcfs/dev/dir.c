@@ -12,45 +12,20 @@ fcfs_dir_entry_t *
 dev_read_dir(fcfs_args_t *args, int fid, int *ret_sz) {
     DEBUG();
     int lblk_sz = args->fs_head->phy_block_size * args->fs_head->block_size;
-    fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];
     fcfs_dir_entry_t   *dir_list = NULL;
     char *dir_buf = NULL;
     int   dir_buf_len = 0;
-    //read all blocks from all clusters to shared buffer
-    for(size_t i = 0; i < FCFS_MAX_CLASTER_COUNT_PER_FILE - 1; ++i) {
-        DEBUG();
-        int                 cid         = tentry->clusters[i];
-        if(fid != 0 && cid == 0)
-            break;
-        fcfs_block_list_t   *ctable     = dev_read_ctable(args, cid); //get cluster table
-        int                 blist_len   = 0;
-        int                 *blist      = dev_get_blocks(ctable, fid, &blist_len); //get blocks id of file
-        char                *blk_buf    = calloc(1, blist_len * lblk_sz);
-        //read all blocks from cluster
-        for(size_t j = 0; j < blist_len; ++j) {
-            char *buf = dev_read_block(args, cid, blist[j]);
-            memcpy(blk_buf + lblk_sz * j, buf, lblk_sz);
-            free(buf);
-        }
-        //copy from local buffer to shared buffer
-        if(dir_buf_len != 0) {
-            char *tmp = calloc(1, dir_buf_len + lblk_sz * blist_len);
-            memcpy(tmp, dir_buf, dir_buf_len);
-            memcpy(tmp + dir_buf_len, blk_buf, lblk_sz * blist_len);
-            free(dir_buf);
-            free(blk_buf);
-            dir_buf = tmp;
-            dir_buf_len = dir_buf_len + lblk_sz * blist_len;
-        }else{
-            dir_buf = blk_buf;
-            dir_buf_len = lblk_sz * blist_len;
-        }
-        free(ctable);
-        free(blist);
 
-        if(fid == 0)
-            break;
+    int seq_sz = 0;
+    dev_blk_info_t *inf = dev_get_file_seq(args, fid, &seq_sz);
+    dir_buf = calloc(1, lblk_sz * seq_sz);
+
+    for(size_t i = 0; i < seq_sz; ++i) {
+        char *buf = dev_read_block(args, inf[i].cid, inf[i].bid);
+        memcpy(dir_buf + dir_buf_len, buf, lblk_sz);
+        dir_buf_len += lblk_sz;
     }
+
     DEBUG();
     fcfs_file_header_t fh;
     memcpy(&fh, dir_buf, sizeof(fcfs_file_header_t));
@@ -60,7 +35,6 @@ dev_read_dir(fcfs_args_t *args, int fid, int *ret_sz) {
     int dir_entr_len = fh.file_size;
 
     dir_list = calloc(1, dir_entr_len);
-    dir_buf_len -= sizeof(fcfs_file_header_t);
 
     memcpy(dir_list, dir_buf + sizeof(fcfs_file_header_t), dir_entr_len);
     free(dir_buf);
@@ -71,72 +45,80 @@ int
 dev_write_dir(fcfs_args_t *args, int fid, fcfs_dir_entry_t *ent, int len) {
     DEBUG();
     int lblk_sz = args->fs_head->block_size * args->fs_head->phy_block_size;
-    int blk_cnt = to_block_count(sizeof(fcfs_file_header_t) + len * sizeof(fcfs_dir_entry_t), lblk_sz);
+    int dir_buf_len = len * sizeof(fcfs_dir_entry_t);
+    int dir_blk_cnt = to_block_count(dir_buf_len + sizeof(fcfs_file_header_t), lblk_sz);
+    int dir_buf_off = 0;
 
-    char *blk_buf = calloc(1, blk_cnt * lblk_sz);
-    int cur_off_buf = 0;
+    char *dir_buf = calloc(1, dir_blk_cnt * lblk_sz);
     fcfs_file_header_t fh;
     fh.file_size = len * sizeof(fcfs_dir_entry_t);
-    memcpy(blk_buf, &fh, sizeof(fcfs_file_header_t));
-    memcpy(blk_buf + sizeof(fcfs_file_header_t), ent, sizeof(fcfs_dir_entry_t) * len);
-    DEBUG("lbk cnt  %d", blk_cnt);
-    DEBUG("data len %lu", sizeof(fcfs_dir_entry_t) * len);
 
-    size_t i = 0;
-    for(;i < FCFS_MAX_CLASTER_COUNT_PER_FILE - 1; ++i) {
-        int cid = args->fs_table->entrys[fid].clusters[i];
-        if(fid != 0 && cid == 0)
-            break;
-        fcfs_block_list_t *bl = dev_read_ctable(args, cid);
-        int cblk_cnt = 0;
-        int *cblks = dev_get_blocks(bl, fid, &cblk_cnt);
+    memcpy(dir_buf, &fh, sizeof(fcfs_file_header_t));
+    memcpy(dir_buf + sizeof(fcfs_file_header_t), ent, dir_buf_len);
 
-        for(size_t j = 0; (j < cblk_cnt) && (cur_off_buf < lblk_sz * blk_cnt) ; ++j) {
-            int bid = cblks[j];
-            dev_write_block(args, cid, bid, blk_buf + cur_off_buf, lblk_sz);
-            cur_off_buf += lblk_sz;
-        }
+    int seq_sz = 0;
+    dev_blk_info_t *inf = dev_get_file_seq(args, fid, &seq_sz);
 
-        free(bl);
-        free(cblks);
-        if(fid == 0)
-            break;
+    if(seq_sz < dir_blk_cnt){
+        int new_seq_sz = 0;
+        dev_blk_info_t *blks = dev_free_blocks(args, dir_blk_cnt - seq_sz, &new_seq_sz);
+        dev_blk_info_t *tmp = calloc(1, (new_seq_sz + seq_sz) * sizeof(dev_blk_info_t));
+        memcpy(tmp, inf, sizeof(dev_blk_info_t) * seq_sz);
+        memcpy(tmp + seq_sz, blks, sizeof(dev_blk_info_t) * new_seq_sz);
+        free(inf);
+        free(blks);
+        inf = tmp;
+        seq_sz += new_seq_sz;
     }
-    DEBUG();
-    while(cur_off_buf < blk_cnt * lblk_sz && i != FCFS_MAX_CLASTER_COUNT_PER_FILE - 1) {
-        int cl_free = dev_free_cluster(args);
-        args->fs_table->entrys[fid].clusters[i] = cl_free;
-        if(cl_free <= 0) {
-            free(ent);
-            free(blk_buf);
-            return -1;
+
+    fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];
+    int old_cid = -1;
+    fcfs_block_list_t *bl = NULL;
+
+    for(size_t i = 0; i < seq_sz; ++i) {
+        if(inf[i].num == 0 && i != 0) {
+            inf[i].num = inf[i-1].num + 1;
         }
-        fcfs_block_list_t *bl = dev_read_ctable(args, cl_free);
-        int cblk_cnt = 0;
-        int *cblks = dev_get_blocks(bl, 0, &cblk_cnt);
-        for(size_t j = 0; j < cblk_cnt; ++j) {
-            bl->entrys[cblks[j] - 1].file_id = fid;
-            int bid = cblks[j];
-            dev_write_block(args, cl_free, bid, blk_buf + cur_off_buf, lblk_sz);
-            cur_off_buf += lblk_sz;
+        if(old_cid != inf[i].cid) {
+            if(old_cid != -1) {
+                dev_write_block(args, old_cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
+                if(!dev_upd_bitmap(args, bl, inf[i].cid))
+                    dev_write_bitmap(args);
+            }
+            old_cid = inf[i].cid;
+            bl = dev_read_ctable(args, inf[i].cid);
         }
-        i += 1;
-        dev_write_block(args, cl_free, 0, (char*)bl, sizeof(fcfs_block_list_t)); //save cluster table
-        if(dev_upd_bitmap(args, bl, cl_free)) {
+        //mark new cluster in table
+        for(size_t j = 0; j < FCFS_MAX_CLASTER_COUNT_PER_FILE - 1; ++j) {
+            if(tentry->clusters[j] && inf[i].cid == tentry->clusters[j])
+                break;
+            else if(tentry->clusters[j] == 0) {
+                tentry->clusters[j] = inf[i].cid;
+                break;
+            }
+
+        }
+
+        bl->entrys[inf[i].bid - 1].num = inf[i].num;
+        bl->entrys[inf[i].bid - 1].file_id = fid;
+
+        char *buf = calloc(1, lblk_sz);
+        memcpy(buf, dir_buf + dir_buf_off, lblk_sz);
+        dev_write_block(args, inf[i].cid, inf[i].bid, buf, lblk_sz);
+        dir_buf_off += lblk_sz;
+    }
+
+    if(old_cid != -1) {
+        dev_write_block(args, old_cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
+        if(!dev_upd_bitmap(args, bl, inf[seq_sz - 1].cid))
             dev_write_bitmap(args);
-        }
-        free(cblks);
-        free(bl);
     }
-    if(i == FCFS_MAX_CLASTER_COUNT_PER_FILE - 1){
-        free(ent);
-        free(blk_buf);
-        return -1;
-    }
+
     DEBUG();
     dev_write_table(args);
-    free(ent);
-    free(blk_buf);
+
+    free(dir_buf);
+    free(inf);
     return 0;
 }
 

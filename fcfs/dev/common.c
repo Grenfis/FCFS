@@ -113,6 +113,7 @@ dev_file_alloc(fcfs_args_t *args, int fid) {
         return -1;
     }
     bl->entrys[blks[0] - 1].file_id = fid;
+    bl->entrys[blks[0] - 1].num     = 0;
     dev_write_block(args, cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
 
     if(dev_upd_bitmap(args, bl, cid))
@@ -127,24 +128,6 @@ dev_file_alloc(fcfs_args_t *args, int fid) {
 int
 dev_file_size(fcfs_args_t *args, int fid) {
     DEBUG();
-    /*int block_cnt = 0;
-    int lblk_sz = args->fs_head->block_size * args->fs_head->phy_block_size;
-    fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];
-    for(size_t i = 0; i < FCFS_MAX_CLASTER_COUNT_PER_FILE; ++i) {
-        int cid = tentry->clusters[i];
-        if(fid != 0 && cid == 0)
-            break;
-        fcfs_block_list_t *ctable = dev_read_ctable(args, cid);
-        int blist_len = 0;
-        int *blist = dev_get_blocks(ctable, fid, &blist_len);
-        block_cnt += blist_len;
-
-        free(ctable);
-        free(blist);
-        if(fid == 0)
-            break;
-    }
-    return block_cnt * lblk_sz;*/
 
     fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];
 
@@ -167,4 +150,28 @@ dev_file_size(fcfs_args_t *args, int fid) {
     free(blist);
     free(buf);
     return fh.file_size;
+}
+
+dev_blk_info_t *
+dev_free_blocks(fcfs_args_t *args, int count, int *size) {
+    dev_blk_info_t *res = calloc(1, sizeof(dev_blk_info_t) * count);
+
+    size_t i = 0;
+    for(; i < count;) {
+        int cid = dev_free_cluster(args);
+        fcfs_block_list_t *bl = dev_read_ctable(args, cid);
+        int b_len = 0;
+        int *blist = dev_get_blocks(bl, 0, &b_len);
+        for(size_t j = 0; j < b_len && i < count; ++j) {
+            res[i].cid = cid;
+            res[i].bid = blist[j];
+            res[i].num = 0;
+            i++;
+        }
+        free(blist);
+        free(bl);
+    }
+
+    *size = i;
+    return res;
 }
