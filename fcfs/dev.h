@@ -40,7 +40,7 @@ int
 dev_file_alloc(fcfs_args_t *args, int fid);
 
 int
-dev_init_dir(fcfs_args_t *args, int fid);
+dev_init_file(fcfs_args_t *args, int fid);
 
 int
 dev_file_size(fcfs_args_t *args, int fid);

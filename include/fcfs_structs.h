@@ -52,12 +52,8 @@ typedef struct fcfs_block_list {
 } fcfs_block_list_t;
 //-----------------------------------DATA--------------------------------
 typedef struct fcfs_file_header{
-
+    unsigned        file_size;
 } fcfs_file_header_t;
-
-typedef struct fcfs_dir_header{
-    unsigned        file_count;
-} fcfs_dir_header_t;
 
 typedef struct fcfs_dir_entry{
     unsigned short  file_id;

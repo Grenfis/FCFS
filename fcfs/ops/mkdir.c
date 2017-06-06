@@ -11,7 +11,7 @@ ops_mkdir(const char *path, mode_t mode) {
 
     int fid = dev_free_fid(args);
     dev_create_file(args, fcfs_get_pfid(path), fid, path + p_len, 0040000 | mode);
-    dev_init_dir(args, fid);
+    dev_init_file(args, fid);
 
     return 0;
 }

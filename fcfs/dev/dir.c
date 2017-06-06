@@ -8,27 +8,6 @@
 
 #include <debug.h>
 
-int
-dev_init_dir(fcfs_args_t *args, int fid) {
-    DEBUG();
-    fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];
-
-    fcfs_dir_header_t dh;
-    memset(&dh, 0, sizeof(fcfs_dir_header_t));
-
-    int cid = tentry->clusters[0];
-    fcfs_block_list_t *bl = dev_read_ctable(args, cid);
-
-    int b_len = 0;
-    int *blks = dev_get_blocks(bl, fid, &b_len);
-
-    int res = dev_write_block(args, cid, blks[0], (char*)&dh, sizeof(fcfs_dir_header_t));
-
-    free(bl);
-    free(blks);
-    return res;
-}
-
 fcfs_dir_entry_t *
 dev_read_dir(fcfs_args_t *args, int fid, int *ret_sz) {
     DEBUG();
@@ -73,16 +52,17 @@ dev_read_dir(fcfs_args_t *args, int fid, int *ret_sz) {
             break;
     }
     DEBUG();
-    int dir_entr_cnt = 0;
-    memcpy(&dir_entr_cnt, dir_buf, sizeof(unsigned));
-    *ret_sz = dir_entr_cnt;
-    if(dir_entr_cnt == 0)
+    fcfs_file_header_t fh;
+    memcpy(&fh, dir_buf, sizeof(fcfs_file_header_t));
+    *ret_sz = fh.file_size; //for dir this means count of dir entrys
+    if(fh.file_size == 0)
         return NULL;
+    int dir_entr_cnt = fh.file_size;
 
     dir_list = calloc(1, sizeof(fcfs_dir_entry_t) * dir_entr_cnt);
-    dir_buf_len -= sizeof(unsigned);
+    dir_buf_len -= sizeof(fcfs_file_header_t);
 
-    memcpy(dir_list, dir_buf + sizeof(unsigned), sizeof(fcfs_dir_entry_t) * dir_entr_cnt);
+    memcpy(dir_list, dir_buf + sizeof(fcfs_file_header_t), sizeof(fcfs_dir_entry_t) * dir_entr_cnt);
     free(dir_buf);
     return dir_list;
 }
@@ -95,8 +75,10 @@ dev_write_dir(fcfs_args_t *args, int fid, fcfs_dir_entry_t *ent, int len) {
 
     char *blk_buf = calloc(1, blk_cnt * lblk_sz);
     int cur_off_buf = 0;
-    memcpy(blk_buf, &len, sizeof(unsigned));
-    memcpy(blk_buf + sizeof(unsigned), ent, sizeof(fcfs_dir_entry_t) * len);
+    fcfs_file_header_t fh;
+    fh.file_size = len;
+    memcpy(blk_buf, &fh, sizeof(fcfs_file_header_t));
+    memcpy(blk_buf + sizeof(fcfs_file_header_t), ent, sizeof(fcfs_dir_entry_t) * len);
     DEBUG("lbk cnt  %d", blk_cnt);
     DEBUG("data len %lu", sizeof(fcfs_dir_entry_t) * len);
 

@@ -85,3 +85,24 @@ dev_create_file(fcfs_args_t *args, int pfid, int fid, const char *name, mode_t m
 
     return 0;
 }
+
+int
+dev_init_file(fcfs_args_t *args, int fid) {
+    DEBUG();
+    fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];
+
+    fcfs_file_header_t fh;
+    memset(&fh, 0, sizeof(fcfs_file_header_t));
+
+    int cid = tentry->clusters[0];
+    fcfs_block_list_t *bl = dev_read_ctable(args, cid);
+
+    int b_len = 0;
+    int *blks = dev_get_blocks(bl, fid, &b_len);
+
+    int res = dev_write_block(args, cid, blks[0], (char*)&fh, sizeof(fcfs_file_header_t));
+
+    free(bl);
+    free(blks);
+    return res;
+}
