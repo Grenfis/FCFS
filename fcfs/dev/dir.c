@@ -54,15 +54,15 @@ dev_read_dir(fcfs_args_t *args, int fid, int *ret_sz) {
     DEBUG();
     fcfs_file_header_t fh;
     memcpy(&fh, dir_buf, sizeof(fcfs_file_header_t));
-    *ret_sz = fh.file_size; //for dir this means count of dir entrys
+    *ret_sz = fh.file_size / sizeof(fcfs_dir_entry_t);
     if(fh.file_size == 0)
         return NULL;
-    int dir_entr_cnt = fh.file_size;
+    int dir_entr_len = fh.file_size;
 
-    dir_list = calloc(1, sizeof(fcfs_dir_entry_t) * dir_entr_cnt);
+    dir_list = calloc(1, dir_entr_len);
     dir_buf_len -= sizeof(fcfs_file_header_t);
 
-    memcpy(dir_list, dir_buf + sizeof(fcfs_file_header_t), sizeof(fcfs_dir_entry_t) * dir_entr_cnt);
+    memcpy(dir_list, dir_buf + sizeof(fcfs_file_header_t), dir_entr_len);
     free(dir_buf);
     return dir_list;
 }
@@ -71,12 +71,12 @@ int
 dev_write_dir(fcfs_args_t *args, int fid, fcfs_dir_entry_t *ent, int len) {
     DEBUG();
     int lblk_sz = args->fs_head->block_size * args->fs_head->phy_block_size;
-    int blk_cnt = to_block_count(sizeof(unsigned) + len * sizeof(fcfs_dir_entry_t), lblk_sz);
+    int blk_cnt = to_block_count(sizeof(fcfs_file_header_t) + len * sizeof(fcfs_dir_entry_t), lblk_sz);
 
     char *blk_buf = calloc(1, blk_cnt * lblk_sz);
     int cur_off_buf = 0;
     fcfs_file_header_t fh;
-    fh.file_size = len;
+    fh.file_size = len * sizeof(fcfs_dir_entry_t);
     memcpy(blk_buf, &fh, sizeof(fcfs_file_header_t));
     memcpy(blk_buf + sizeof(fcfs_file_header_t), ent, sizeof(fcfs_dir_entry_t) * len);
     DEBUG("lbk cnt  %d", blk_cnt);
@@ -145,13 +145,24 @@ dev_rm_from_dir(fcfs_args_t *args, int fid, int del_id) {
     int dirs_len = 0;
     fcfs_dir_entry_t *dirs = dev_read_dir(args, fid, &dirs_len);
 
+    int index = -1;
     for(size_t i = 0; i < dirs_len; ++i) {
         if(dirs[i].file_id == del_id) {
-            memset(dirs[i].name, 0, FCFS_MAX_FILE_NAME_LENGTH);
+            //memset(dirs[i].name, 0, FCFS_MAX_FILE_NAME_LENGTH);
+            memcpy(&dirs[i], &dirs[dirs_len - 1], sizeof(fcfs_dir_entry_t));
+            index = i;
+            break;
         }
     }
 
-    dev_write_dir(args, fid, dirs, dirs_len);
+    if(index < 0)
+        return -1;
 
+    fcfs_dir_entry_t *tmp = calloc(1, (dirs_len - 1) * sizeof(fcfs_dir_entry_t));
+    memcpy(tmp, dirs, (dirs_len - 1) * sizeof(fcfs_dir_entry_t));
+
+    dev_write_dir(args, fid, tmp, dirs_len - 1);
+
+    free(dirs);
     return 0;
 }

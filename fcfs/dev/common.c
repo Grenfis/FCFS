@@ -127,7 +127,7 @@ dev_file_alloc(fcfs_args_t *args, int fid) {
 int
 dev_file_size(fcfs_args_t *args, int fid) {
     DEBUG();
-    int block_cnt = 0;
+    /*int block_cnt = 0;
     int lblk_sz = args->fs_head->block_size * args->fs_head->phy_block_size;
     fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];
     for(size_t i = 0; i < FCFS_MAX_CLASTER_COUNT_PER_FILE; ++i) {
@@ -144,5 +144,27 @@ dev_file_size(fcfs_args_t *args, int fid) {
         if(fid == 0)
             break;
     }
-    return block_cnt * lblk_sz;
+    return block_cnt * lblk_sz;*/
+
+    fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];
+
+    int cid = tentry->clusters[0];
+    if(fid != 0 && cid == 0)
+        return 0;
+
+    fcfs_block_list_t *ctable = dev_read_ctable(args, cid);
+    int b_cnt = 0;
+    int *blist = dev_get_blocks(ctable, fid, &b_cnt);
+
+    if(b_cnt == 0)
+        return 0;
+
+    char *buf = dev_read_block(args, cid, blist[0]);
+    fcfs_file_header_t fh;
+    memcpy(&fh, buf, sizeof(fcfs_file_header_t));
+
+    free(ctable);
+    free(blist);
+    free(buf);
+    return fh.file_size;
 }

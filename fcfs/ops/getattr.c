@@ -12,13 +12,10 @@ ops_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi) {
     stbufm->st_mtime = time(NULL);
     //if it's root return constant data
     if(strcmp(path, "/") == 0) {
-        stbufm->st_dev = 0; //file id
-        stbufm->st_mode = 0040000 | 0777; //todo: permission system
-        stbufm->st_nlink = 2;
-
-        //ops_getattr_cache.fid = 0;
-        //strcpy(ops_getattr_cache.path, path);
-
+        stbufm->st_dev      = 0; //file id
+        stbufm->st_mode     = 0040000 | 0777; //todo: permission system
+        stbufm->st_nlink    = 2;
+        stbufm->st_size     = dev_file_size(args, 0);
         return 0;
     }
     //get directory content
