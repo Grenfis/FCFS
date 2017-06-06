@@ -17,7 +17,7 @@ link_directories("/home/snippy/diploma/lib/lib/")
 set(DEV dev/common.c dev/dir.c dev/file.c dev/mount.c dev/read.c dev/write_structs.c dev/write.c)
 set(OPS ops/common.c ops/getattr.c ops/main.c ops/mkdir.c ops/open.c ops/read.c
     ops/readdir.c ops/rmdir.c ops/create.c ops/unlink.c ops/chown.c ops/truncate.c
-    ops/utimens.c)
+    ops/utimens.c ops/write.c)
 add_executable(fcfs fcfs.c utils.c ${OPS} ${DEV})
 
 target_link_libraries(fcfs fcfs_lib)

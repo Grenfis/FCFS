@@ -29,6 +29,7 @@ static struct fuse_operations fcfs_ops = {
     .rmdir      = ops_rmdir,
     .open       = ops_open,
     .read       = ops_read,
+    .write      = ops_write,
     .init       = ops_init,
     .destroy    = ops_destroy,
     .create     = ops_create,
