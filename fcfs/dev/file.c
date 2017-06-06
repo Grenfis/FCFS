@@ -9,16 +9,16 @@
 #include <debug.h>
 
 int
-dev_rm_file(fcfs_args_t *args, int fid) {
+dev_rm_file(fcfs_args_t *args, int fid, int pfid) {
     DEBUG();
     if(fid == 0)
         return -1;
 
     fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];
-    if(tentry->link_count == 0)
+    tentry->link_count--;
+    if(tentry->link_count != 0)
         return -1;
 
-    tentry->link_count = 0;
     for(size_t i = 0; i < FCFS_MAX_CLASTER_COUNT_PER_FILE - 1; ++i) {
         int cid = tentry->clusters[i];
         if(cid == 0)
@@ -39,6 +39,7 @@ dev_rm_file(fcfs_args_t *args, int fid) {
         }
     }
 
+    dev_rm_from_dir(args, pfid, fid);
     dev_write_table(args);
     return 0;
 }

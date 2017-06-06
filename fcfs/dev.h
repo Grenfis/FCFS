@@ -46,7 +46,7 @@ int
 dev_file_size(fcfs_args_t *args, int fid);
 
 int
-dev_rm_file(fcfs_args_t *args, int fid);
+dev_rm_file(fcfs_args_t *args, int fid, int pfid);
 
 int
 dev_rm_from_dir(fcfs_args_t *args, int fid, int del_id);
