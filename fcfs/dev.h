@@ -79,4 +79,7 @@ dev_get_file_seq(fcfs_args_t *args, int fid, int *size);
 dev_blk_info_t *
 dev_free_blocks(fcfs_args_t *args, int count, int *size);
 
+int
+dev_del_block(fcfs_args_t *agrs, int fid, int cid, int bid);
+
 #endif

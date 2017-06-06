@@ -4,7 +4,7 @@
 #include <time.h>
 
 #define FCFS_LABEL_LENGTH               (unsigned char) 255
-#define FCFS_MAX_CLASTER_COUNT_PER_FILE (unsigned char) 8
+#define FCFS_MAX_CLASTER_COUNT_PER_FILE (unsigned char) 16
 #define FCFS_BLOKS_PER_CLUSTER          (unsigned short)8
 #define FCFS_TABLE_COUNT                (unsigned short)65535
 #define FCFS_BLOCK_SIZE                 (unsigned char)2

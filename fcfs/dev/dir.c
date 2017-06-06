@@ -69,6 +69,11 @@ dev_write_dir(fcfs_args_t *args, int fid, fcfs_dir_entry_t *ent, int len) {
         free(blks);
         inf = tmp;
         seq_sz += new_seq_sz;
+    }else if(seq_sz > dir_blk_cnt) {
+        int for_del = seq_sz - dir_blk_cnt;
+        for(size_t i = 0; i < for_del; i++) {
+            dev_del_block(args, fid, inf[seq_sz - i - 1].cid, inf[seq_sz - i - 1].bid);
+        }
     }
 
     fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];

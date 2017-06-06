@@ -175,3 +175,32 @@ dev_free_blocks(fcfs_args_t *args, int count, int *size) {
     *size = i;
     return res;
 }
+
+int
+dev_del_block(fcfs_args_t *args, int fid, int cid, int bid) {
+    fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];
+    fcfs_block_list_t *bl = dev_read_ctable(args, cid);
+
+    int b_len = 0;
+    int *blist = dev_get_blocks(bl, fid, &b_len);
+
+    bl->entrys[bid - 1].file_id = 0;
+    bl->entrys[bid - 1].num = 0;
+
+    if(!dev_upd_bitmap(args, bl, cid))
+        dev_write_bitmap(args);
+    dev_write_block(args, cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
+
+    if(b_len == 1) {
+        for(size_t i = 0; i < FCFS_MAX_CLASTER_COUNT_PER_FILE - 1; ++i) {
+            if(tentry->clusters[i] == cid)
+                tentry->clusters[i] = 0;
+        }
+        dev_write_table(args);
+    }
+
+    free(blist);
+    free(bl);
+    
+    return 0;
+}
