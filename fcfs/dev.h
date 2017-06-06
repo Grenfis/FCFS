@@ -3,6 +3,8 @@
 
 #include "fcfs.h"
 #include <fcfs_structs.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 int
 dev_mount(fcfs_args_t *args);
@@ -60,5 +62,8 @@ dev_free_cluster(fcfs_args_t *args);
 
 int
 dev_write_block(fcfs_args_t *args, int cid, int bid, char *data, int len);
+
+int
+dev_create_file(fcfs_args_t *args, int pfid, int fid, const char *name, mode_t mode);
 
 #endif

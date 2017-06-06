@@ -1,11 +1,4 @@
-#include "../ops.h"
-#include "../utils.h"
-#include "../fcfs.h"
 #include "common.h"
-
-#include <stdlib.h>
-#include <string.h>
-#include <debug.h>
 
 fcfs_args_t *
 fcfs_get_args(void) {

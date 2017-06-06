@@ -42,4 +42,12 @@ ops_read(  const char *path,
             off_t offset,
             struct fuse_file_info *fi);
 
+int
+ops_create( const char *path,
+            mode_t mode,
+            struct fuse_file_info *fi);
+
+int
+ops_unlink(const char *path);
+
 #endif
