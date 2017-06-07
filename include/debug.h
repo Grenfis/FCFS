@@ -5,8 +5,8 @@
 
 #include <stdio.h>
 
-#define DEBUG(__X, ...) fprintf(stdout, "[DEBUG] %s:%s:%lu > " __X "\n", __FILENAME__, __func__, (unsigned long)__LINE__, ##__VA_ARGS__)
-#define ERROR(__X, ...) fprintf(stderr, "[ERROR] %s:%s:%lu > " __X "\n", __FILENAME__, __func__, (unsigned long)__LINE__, ##__VA_ARGS__)
+#define DEBUG(__X, ...) fprintf(stdout, "\x1b[34;1m[DEBUG] %s:%s:%lu > " __X "\x1b[0m\n", __FILENAME__, __func__, (unsigned long)__LINE__, ##__VA_ARGS__)
+#define ERROR(__X, ...) fprintf(stderr, "\x1b[31;1m[ERROR] %s:%s:%lu > " __X "\x1b[0m\n", __FILENAME__, __func__, (unsigned long)__LINE__, ##__VA_ARGS__)
 
 #else
 

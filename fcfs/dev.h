@@ -68,7 +68,7 @@ int
 dev_free_cluster(fcfs_args_t *args);
 
 int
-dev_write_block(fcfs_args_t *args, int cid, int bid, char *data, int len);
+dev_write_block(fcfs_args_t *args, int cid, int bid, const char *data, int len);
 
 int
 dev_create_file(fcfs_args_t *args, int pfid, int fid, const char *name, mode_t mode);
@@ -81,5 +81,11 @@ dev_free_blocks(fcfs_args_t *args, int count, int *size);
 
 int
 dev_del_block(fcfs_args_t *agrs, int fid, int cid, int bid);
+
+int
+dev_read_by_id(fcfs_args_t *args, int fid, int id, char *buf, int lblk_sz);
+
+int
+dev_write_by_id(fcfs_args_t *args, int fid, int id, const char *buf, int lblk_sz);
 
 #endif

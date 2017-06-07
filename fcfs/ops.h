@@ -46,4 +46,7 @@ ops_chown(const char *path, uid_t u, gid_t g, struct fuse_file_info *fi);
 int
 ops_utimens(const char *path, const struct timespec tv[2], struct fuse_file_info *fi);
 
+int
+ops_flush(const char *path, struct fuse_file_info *fi);
+
 #endif

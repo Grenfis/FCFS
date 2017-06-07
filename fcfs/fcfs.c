@@ -37,6 +37,7 @@ static struct fuse_operations fcfs_ops = {
     .utimens    = ops_utimens,
     .chown      = ops_chown,
     .truncate   = ops_truncate,
+    .flush      = ops_flush,
 }; //file system operations
 
 static struct fuse_opt fcfs_opt[] = {

@@ -129,27 +129,34 @@ int
 dev_file_size(fcfs_args_t *args, int fid) {
     DEBUG();
 
-    fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];
-
-    int cid = tentry->clusters[0];
-    if(fid != 0 && cid == 0)
-        return 0;
-
-    fcfs_block_list_t *ctable = dev_read_ctable(args, cid);
-    int b_cnt = 0;
-    int *blist = dev_get_blocks(ctable, fid, &b_cnt);
-
-    if(b_cnt == 0)
-        return 0;
-
-    char *buf = dev_read_block(args, cid, blist[0]);
+    int lblk_sz = args->fs_head->phy_block_size + args->fs_head->block_size;
     fcfs_file_header_t fh;
+    char buf[lblk_sz];
+    int res = dev_read_by_id(args, fid, 0, buf, lblk_sz);
+    if(res < 0)
+        return -1;
     memcpy(&fh, buf, sizeof(fcfs_file_header_t));
-
-    free(ctable);
-    free(blist);
-    free(buf);
     return fh.file_size;
+}
+
+int
+dev_set_file_size(fcfs_args_t *args, int fid, int size) {
+    DEBUG();
+
+    int lblk_sz = args->fs_head->phy_block_size + args->fs_head->block_size;
+    fcfs_file_header_t fh;
+    fh.file_size = size;
+
+    char buf[lblk_sz];
+    int res = dev_read_by_id(args, fid, 0, buf, lblk_sz);
+    if(res < 0)
+        return -1;
+    //memcpy(&fh, buf, sizeof(fcfs_file_header_t));
+    memcpy(buf, &fh, sizeof(fcfs_file_header_t));
+
+    res = dev_write_by_id(args, fid, 0, buf, lblk_sz);
+    
+    return res;
 }
 
 dev_blk_info_t *
@@ -201,6 +208,6 @@ dev_del_block(fcfs_args_t *args, int fid, int cid, int bid) {
 
     free(blist);
     free(bl);
-    
+
     return 0;
 }
