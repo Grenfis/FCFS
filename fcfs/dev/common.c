@@ -155,7 +155,7 @@ dev_set_file_size(fcfs_args_t *args, int fid, int size) {
     memcpy(buf, &fh, sizeof(fcfs_file_header_t));
 
     res = dev_write_by_id(args, fid, 0, buf, lblk_sz);
-    
+
     return res;
 }
 
@@ -209,5 +209,54 @@ dev_del_block(fcfs_args_t *args, int fid, int cid, int bid) {
     free(blist);
     free(bl);
 
+    return 0;
+}
+
+int
+dev_file_reserve(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, int last_num) {
+    if(fid == 0) {
+        ERROR("root can not be resize");
+        return -1;
+    }
+    fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];
+    int l_cl = 0;
+    for(size_t i = 0; i < FCFS_MAX_CLASTER_COUNT_PER_FILE; ++i) {
+        if(i != FCFS_MAX_CLASTER_COUNT_PER_FILE - 1) {
+            if(tentry->clusters[i] == 0) {
+                l_cl = i;
+                break;
+            }
+        }else{
+            ERROR("not enouth spase in calster seq");
+            return -1;
+        }
+    }
+    for(size_t i = 0; i < seq_sz; ++i) {
+        if(l_cl < FCFS_MAX_CLASTER_COUNT_PER_FILE - 1) {
+            for(size_t j = 0; j < FCFS_MAX_CLASTER_COUNT_PER_FILE - 1; ++j) {
+                if(inf[i].cid == tentry->clusters[j])
+                    break;
+                else if(tentry->clusters[j] == 0) {
+                    tentry->clusters[j] = inf[i].cid;
+                    l_cl++;
+                    break;
+                }
+            }
+        }else{
+            ERROR("not enouth spase in calster seq");
+            return -1;
+        }
+        last_num++;
+        fcfs_block_list_t *bl = dev_read_ctable(args, inf[i].cid);
+        bl->entrys[inf[i].bid - 1].file_id = fid;
+        bl->entrys[inf[i].bid - 1].num = last_num;
+        dev_write_block(args, inf[i].cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
+        inf[i].num = last_num;
+
+        if(!dev_upd_bitmap(args, bl, inf[i].cid))
+            dev_write_bitmap(args);
+        free(bl);
+    }
+    dev_write_table(args);
     return 0;
 }
