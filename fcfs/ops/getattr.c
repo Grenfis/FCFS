@@ -33,13 +33,13 @@ ops_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi) {
     for(size_t i = 0; i < dirs_len; ++i) {
         //if directory contents requested file
         if(strcmp(dirs[i].name, path + p_len) == 0) {
-            stbufm->st_atime = dirs[i].access_date;
-            stbufm->st_mtime = dirs[i].change_date;
-            stbufm->st_ctime = dirs[i].create_date;
-            stbufm->st_nlink = args->fs_table->entrys[dirs[i].file_id].link_count;
+            stbufm->st_atime = dirs[i].atime;
+            stbufm->st_mtime = dirs[i].mtime;
+            stbufm->st_ctime = dirs[i].ctime;
+            stbufm->st_nlink = args->fs_table->entrs[dirs[i].fid].lnk_cnt;
             stbufm->st_mode =  dirs[i].mode;
-            stbufm->st_size = dev_file_size(args, dirs[i].file_id);
-            stbufm->st_dev = dirs[i].file_id;
+            stbufm->st_size = dev_file_size(args, dirs[i].fid);
+            stbufm->st_dev = dirs[i].fid;
 
             free(dirs);
             return 0;

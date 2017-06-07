@@ -25,7 +25,6 @@ ops_readdir(   const char *path,
     }
 
     for(size_t i = 0; i < dirs_len; ++i) {
-        //if(args->fs_table->entrys[dirs[i].file_id].link_count != 0)
         if(strlen(dirs[i].name) != 0) //if entry is not deleted
             filler(buf, dirs[i].name, NULL, 0, 0);
     }

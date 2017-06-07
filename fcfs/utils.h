@@ -11,6 +11,6 @@ int
 get_parrent_path(const char *path);
 
 int
-to_block_count(int data_len, int lblk_sz);
+to_blk_cnt(int data_len, int lblk_sz);
 
 #endif

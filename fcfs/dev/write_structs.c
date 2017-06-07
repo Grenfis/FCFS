@@ -10,7 +10,7 @@
 int
 dev_write_header(fcfs_args_t *args) {
     DEBUG("");
-    int lblk_sz = args->fs_head->phy_block_size * args->fs_head->block_size;
+    int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
     char *blk_buf = calloc(1, lblk_sz);
     memcpy(blk_buf, args->fs_head, sizeof(fcfs_head_t));
 
@@ -32,10 +32,10 @@ dev_write_header(fcfs_args_t *args) {
 int
 dev_write_bitmap(fcfs_args_t *args) {
     DEBUG("");
-    int lblk_sz = args->fs_head->phy_block_size * args->fs_head->block_size;
-    int btm_blk_len = args->fs_head->bitmap_count * lblk_sz;
+    int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
+    int btm_blk_len = args->fs_head->bmp_len * lblk_sz;
     char *blk_buf = calloc(1, btm_blk_len);
-    memcpy(blk_buf, args->fs_bitmap, args->fs_head->cluster_count / 8.0);
+    memcpy(blk_buf, args->fs_bitmap, args->fs_head->clu_cnt / 8.0);
 
     int res = fseek(args->dev, lblk_sz, SEEK_SET);
     if(res == 1L) {
@@ -55,9 +55,9 @@ dev_write_bitmap(fcfs_args_t *args) {
 int
 dev_write_table(fcfs_args_t *args) {
     DEBUG("");
-    int lblk_sz = args->fs_head->phy_block_size * args->fs_head->block_size;
-    int btm_blk_len = args->fs_head->bitmap_count * lblk_sz;
-    int tbl_blk_len = args->fs_head->table_count  * lblk_sz;
+    int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
+    int btm_blk_len = args->fs_head->bmp_len * lblk_sz;
+    int tbl_blk_len = args->fs_head->tbl_len  * lblk_sz;
 
     char *blk_buf = calloc(1, tbl_blk_len);
     DEBUG("fcfs_table len %lu", sizeof(fcfs_table_t));

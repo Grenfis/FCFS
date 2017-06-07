@@ -19,12 +19,12 @@ ops_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_fil
             return size;
     }
 
-    int lblk_sz = args->fs_head->phy_block_size * args->fs_head->block_size;
+    int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
     offset += sizeof(fcfs_file_header_t);
 
     int blk_num = offset / (double)lblk_sz;
     int blk_off = offset % lblk_sz;
-    int sz_cnt = to_block_count(blk_off + size, lblk_sz);
+    int sz_cnt = to_blk_cnt(blk_off + size, lblk_sz);
 
     char tmp[lblk_sz * sz_cnt];
     for(size_t i = 0; i < sz_cnt; ++i) {

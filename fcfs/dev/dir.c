@@ -11,7 +11,7 @@
 fcfs_dir_entry_t *
 dev_read_dir(fcfs_args_t *args, int fid, int *ret_sz) {
     DEBUG();
-    int lblk_sz = args->fs_head->phy_block_size * args->fs_head->block_size;
+    int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
     fcfs_dir_entry_t   *dir_list = NULL;
     char *dir_buf = NULL;
     int   dir_buf_len = 0;
@@ -29,10 +29,10 @@ dev_read_dir(fcfs_args_t *args, int fid, int *ret_sz) {
     DEBUG();
     fcfs_file_header_t fh;
     memcpy(&fh, dir_buf, sizeof(fcfs_file_header_t));
-    *ret_sz = fh.file_size / sizeof(fcfs_dir_entry_t);
-    if(fh.file_size == 0)
+    *ret_sz = fh.f_sz / sizeof(fcfs_dir_entry_t);
+    if(fh.f_sz == 0)
         return NULL;
-    int dir_entr_len = fh.file_size;
+    int dir_entr_len = fh.f_sz;
 
     dir_list = calloc(1, dir_entr_len);
 
@@ -44,14 +44,14 @@ dev_read_dir(fcfs_args_t *args, int fid, int *ret_sz) {
 int
 dev_write_dir(fcfs_args_t *args, int fid, fcfs_dir_entry_t *ent, int len) {
     DEBUG();
-    int lblk_sz = args->fs_head->block_size * args->fs_head->phy_block_size;
+    int lblk_sz = args->fs_head->blk_sz * args->fs_head->phy_blk_sz;
     int dir_buf_len = len * sizeof(fcfs_dir_entry_t);
-    int dir_blk_cnt = to_block_count(dir_buf_len + sizeof(fcfs_file_header_t), lblk_sz);
+    int dir_blk_cnt = to_blk_cnt(dir_buf_len + sizeof(fcfs_file_header_t), lblk_sz);
     int dir_buf_off = 0;
 
     char *dir_buf = calloc(1, dir_blk_cnt * lblk_sz);
     fcfs_file_header_t fh;
-    fh.file_size = len * sizeof(fcfs_dir_entry_t);
+    fh.f_sz = len * sizeof(fcfs_dir_entry_t);
 
     memcpy(dir_buf, &fh, sizeof(fcfs_file_header_t));
     memcpy(dir_buf + sizeof(fcfs_file_header_t), ent, dir_buf_len);
@@ -76,7 +76,7 @@ dev_write_dir(fcfs_args_t *args, int fid, fcfs_dir_entry_t *ent, int len) {
         }
     }
 
-    fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];
+    fcfs_table_entry_t *tentry = &args->fs_table->entrs[fid];
     int old_cid = -1;
     fcfs_block_list_t *bl = NULL;
 
@@ -94,18 +94,18 @@ dev_write_dir(fcfs_args_t *args, int fid, fcfs_dir_entry_t *ent, int len) {
             bl = dev_read_ctable(args, inf[i].cid);
         }
         //mark new cluster in table
-        for(size_t j = 0; j < FCFS_MAX_CLASTER_COUNT_PER_FILE - 1; ++j) {
-            if(tentry->clusters[j] && inf[i].cid == tentry->clusters[j])
+        for(size_t j = 0; j < FCFS_CLUSTER_PER_FILE - 1; ++j) {
+            if(tentry->clrs[j] && inf[i].cid == tentry->clrs[j])
                 break;
-            else if(tentry->clusters[j] == 0) {
-                tentry->clusters[j] = inf[i].cid;
+            else if(tentry->clrs[j] == 0) {
+                tentry->clrs[j] = inf[i].cid;
                 break;
             }
 
         }
 
-        bl->entrys[inf[i].bid - 1].num = inf[i].num;
-        bl->entrys[inf[i].bid - 1].file_id = fid;
+        bl->entrs[inf[i].bid - 1].num = inf[i].num;
+        bl->entrs[inf[i].bid - 1].fid = fid;
 
         char *buf = calloc(1, lblk_sz);
         memcpy(buf, dir_buf + dir_buf_off, lblk_sz);
@@ -134,7 +134,7 @@ dev_rm_from_dir(fcfs_args_t *args, int fid, int del_id) {
 
     int index = -1;
     for(size_t i = 0; i < dirs_len; ++i) {
-        if(dirs[i].file_id == del_id) {
+        if(dirs[i].fid == del_id) {
             //memset(dirs[i].name, 0, FCFS_MAX_FILE_NAME_LENGTH);
             memcpy(&dirs[i], &dirs[dirs_len - 1], sizeof(fcfs_dir_entry_t));
             index = i;

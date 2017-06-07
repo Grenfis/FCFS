@@ -11,7 +11,7 @@ fcfs_block_list_t *
 dev_read_ctable(fcfs_args_t *args, int id) {
     DEBUG();
     fcfs_block_list_t *table = calloc(1, sizeof(fcfs_block_list_t));
-    int lblk_sz = args->fs_head->phy_block_size * args->fs_head->block_size;
+    int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
     int dta_beg = args->fs_head->dta_beg * lblk_sz;
     int clu_sz = FCFS_BLOKS_PER_CLUSTER * lblk_sz;
 
@@ -36,7 +36,7 @@ dev_read_ctable(fcfs_args_t *args, int id) {
 char *
 dev_read_block(fcfs_args_t *args, int cid, int bid) {
     DEBUG();
-    int lblk_sz = args->fs_head->phy_block_size * args->fs_head->block_size;
+    int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
     int dta_beg = args->fs_head->dta_beg * lblk_sz;
     dta_beg += cid * FCFS_BLOKS_PER_CLUSTER * lblk_sz;
     dta_beg += bid * lblk_sz;
@@ -63,14 +63,14 @@ dev_get_blocks(fcfs_block_list_t *blist, int fid, int *ret_sz) {
     *ret_sz = 0;
     int *res = NULL;
     for(size_t i = 0; i < FCFS_BLOKS_PER_CLUSTER - 1; ++i) {
-        if(fid == blist->entrys[i].file_id) {
+        if(fid == blist->entrs[i].fid) {
             *ret_sz += 1;
         }
     }
     res = calloc(1, *ret_sz * sizeof(int));
     int k = 0;
     for(size_t i = 0; i < FCFS_BLOKS_PER_CLUSTER - 1; ++i) {
-        if(fid == blist->entrys[i].file_id) {
+        if(fid == blist->entrs[i].fid) {
             res[k] = i + 1;
             k += 1;
          }

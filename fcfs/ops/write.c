@@ -15,13 +15,13 @@ ops_write(const char *path, const char *data, size_t size, off_t offset, struct 
     fcfs_args_t *args = fcfs_get_args();
 
     int fid = fi->fh;
-    int lblk_sz = args->fs_head->phy_block_size * args->fs_head->block_size;
+    int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
 
     int blk_num = offset / (double)lblk_sz;
     int blk_off = offset % lblk_sz;
     const int old_num = blk_num;
 
-    int sz_cnt = to_block_count(blk_off + size, lblk_sz);
+    int sz_cnt = to_blk_cnt(blk_off + size, lblk_sz);
 
     int seq_sz = 0;
     dev_blk_info_t *inf = dev_get_file_seq(args, fid, &seq_sz);

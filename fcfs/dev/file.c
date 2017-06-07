@@ -14,13 +14,13 @@ dev_rm_file(fcfs_args_t *args, int fid, int pfid) {
     if(fid == 0)
         return -1;
 
-    fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];
-    tentry->link_count--;
-    if(tentry->link_count != 0)
+    fcfs_table_entry_t *tentry = &args->fs_table->entrs[fid];
+    tentry->lnk_cnt--;
+    if(tentry->lnk_cnt != 0)
         return -1;
 
-    for(size_t i = 0; i < FCFS_MAX_CLASTER_COUNT_PER_FILE - 1; ++i) {
-        int cid = tentry->clusters[i];
+    for(size_t i = 0; i < FCFS_CLUSTER_PER_FILE - 1; ++i) {
+        int cid = tentry->clrs[i];
         if(cid == 0)
             break;
 
@@ -29,7 +29,7 @@ dev_rm_file(fcfs_args_t *args, int fid, int pfid) {
         int *blist = dev_get_blocks(bl, fid, &blist_cnt);
 
         for(size_t j = 0; j < blist_cnt; ++j) {
-            bl->entrys[blist[j] - 1].file_id = 0;
+            bl->entrs[blist[j] - 1].fid = 0;
         }
 
         if(blist_cnt != 0) {
@@ -73,11 +73,11 @@ dev_create_file(fcfs_args_t *args, int pfid, int fid, const char *name, mode_t m
     }
 
     dev_file_alloc(args, fid);
-    tmp[new_pos].file_id       = fid; //set free file id
+    tmp[new_pos].fid       = fid; //set free file id
     tmp[new_pos].mode          = mode;
-    tmp[new_pos].create_date   = time(NULL);
-    tmp[new_pos].access_date   = time(NULL);
-    tmp[new_pos].change_date   = time(NULL);
+    tmp[new_pos].ctime   = time(NULL);
+    tmp[new_pos].atime   = time(NULL);
+    tmp[new_pos].mtime   = time(NULL);
 
     strcpy(tmp[new_pos].name, name);
 
@@ -89,12 +89,12 @@ dev_create_file(fcfs_args_t *args, int pfid, int fid, const char *name, mode_t m
 int
 dev_init_file(fcfs_args_t *args, int fid) {
     DEBUG();
-    fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];
+    fcfs_table_entry_t *tentry = &args->fs_table->entrs[fid];
 
     fcfs_file_header_t fh;
     memset(&fh, 0, sizeof(fcfs_file_header_t));
 
-    int cid = tentry->clusters[0];
+    int cid = tentry->clrs[0];
     fcfs_block_list_t *bl = dev_read_ctable(args, cid);
 
     int b_len = 0;
@@ -110,12 +110,12 @@ dev_init_file(fcfs_args_t *args, int fid) {
 dev_blk_info_t *
 dev_get_file_seq(fcfs_args_t *args, int fid, int *size) {
     DEBUG();
-    fcfs_table_entry_t *tentry = &args->fs_table->entrys[fid];
+    fcfs_table_entry_t *tentry = &args->fs_table->entrs[fid];
 
-    dev_blk_info_t tmp[(FCFS_MAX_CLASTER_COUNT_PER_FILE - 1) * FCFS_BLOKS_PER_CLUSTER];
+    dev_blk_info_t tmp[(FCFS_CLUSTER_PER_FILE - 1) * FCFS_BLOKS_PER_CLUSTER];
     int k = 0;
-    for(size_t i = 0; i < FCFS_MAX_CLASTER_COUNT_PER_FILE - 1; ++i) {
-        int cid = tentry->clusters[i];
+    for(size_t i = 0; i < FCFS_CLUSTER_PER_FILE - 1; ++i) {
+        int cid = tentry->clrs[i];
         if(fid != 0 && cid == 0)
             break;
 
@@ -125,7 +125,7 @@ dev_get_file_seq(fcfs_args_t *args, int fid, int *size) {
         for(size_t j = 0; j < b_len; ++j) {
             tmp[k].cid = cid;
             tmp[k].bid = blist[j];
-            tmp[k].num = bl->entrys[blist[j] - 1].num;
+            tmp[k].num = bl->entrs[blist[j] - 1].num;
             k++;
         }
 

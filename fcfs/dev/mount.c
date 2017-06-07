@@ -71,22 +71,22 @@ dev_mount(fcfs_args_t *args) {
 
     fcfs_head_t *f_head = read_head(args->dev, l_blk_sz);
     args->fs_head   = f_head;
-    args->fs_bitmap = read_bitmap(args->dev,    f_head->phy_block_size *
-                                                f_head->block_size *
-                                                f_head->bitmap_count);
+    args->fs_bitmap = read_bitmap(args->dev,    f_head->phy_blk_sz *
+                                                f_head->blk_sz *
+                                                f_head->bmp_len);
 
-    args->fs_table  = read_table(args->dev,     f_head->phy_block_size *
-                                                f_head->block_size *
-                                                f_head->table_count);
+    args->fs_table  = read_table(args->dev,     f_head->phy_blk_sz *
+                                                f_head->blk_sz *
+                                                f_head->tbl_len);
 
     DEBUG("fsid                 %u",    f_head->fsid);
     DEBUG("label                %s",    f_head->label);
-    DEBUG("phy blk sz           %u",    f_head->phy_block_size);
-    DEBUG("phy blk cnt          %lu",   f_head->phy_block_count);
-    DEBUG("log blk sz           %u",    f_head->block_size);
-    DEBUG("log blk cnt          %lu",   f_head->block_count);
-    DEBUG("bitmap len           %u",    f_head->bitmap_count);
-    DEBUG("table count          %u",    f_head->table_count);
+    DEBUG("phy blk sz           %u",    f_head->phy_blk_sz);
+    DEBUG("phy blk cnt          %lu",   f_head->phy_blk_cnt);
+    DEBUG("log blk sz           %u",    f_head->blk_sz);
+    DEBUG("log blk cnt          %lu",   f_head->blk_cnt);
+    DEBUG("bitmap len           %u",    f_head->bmp_len);
+    DEBUG("table count          %u",    f_head->tbl_len);
 
     return 0;
 }
