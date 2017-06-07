@@ -6,6 +6,9 @@ ops_write(const char *path, const char *data, size_t size, off_t offset, struct 
     DEBUG("offset %lu", offset);
     if(fi != NULL) {
         DEBUG("fid %lu", fi->fh);
+        if(fi->fh == 0) {
+            ops_open(path, fi);
+        }
     }
 
     offset += sizeof(fcfs_file_header_t);
