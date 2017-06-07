@@ -26,12 +26,13 @@ ops_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_fil
     int blk_off = offset % lblk_sz;
     int sz_cnt = to_block_count(blk_off + size, lblk_sz);
 
+    char tmp[lblk_sz * sz_cnt];
     for(size_t i = 0; i < sz_cnt; ++i) {
-        char tmp_buf[lblk_sz];
-        dev_read_by_id(args, fid, blk_num, tmp_buf, lblk_sz);
-        memcpy(buf + i * lblk_sz, tmp_buf + blk_off, lblk_sz - blk_off);
-        blk_off = 0;
+        dev_read_by_id(args, fid, blk_num, tmp + i * lblk_sz, lblk_sz);
+        blk_num++;
     }
+
+    memcpy(buf, tmp + blk_off, size);
 
     return size;
 }
