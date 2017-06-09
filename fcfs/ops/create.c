@@ -11,6 +11,8 @@ ops_create( const char *path, mode_t mode, struct fuse_file_info *fi) {
     p_len += 1;
 
     dev_create_file(args, pfid, fid, path + p_len, 0100000 | mode);
+    //dev_file_alloc(args, fid);
+    dev_init_file(args, fid);
 
     return 0;
 }

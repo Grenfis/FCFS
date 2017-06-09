@@ -53,18 +53,23 @@ dev_upd_bitmap(fcfs_args_t *args, fcfs_block_list_t *bl, int cid) {
 }
 
 int
-dev_free_cluster(fcfs_args_t *args) {
+dev_free_cluster_from(fcfs_args_t *args, int cid) {
     DEBUG();
     unsigned char *bitmap = args->fs_bitmap;
     int btm_len = args->fs_head->clu_cnt;
-    for(size_t i = 0; i < btm_len; ++i) {
+
+    int sg = cid / 8.0;
+    int sc = (cid % 8) + 1;
+
+    for(size_t i = sg; i < btm_len; ++i) {
         unsigned char cs = bitmap[i];
         if(cs == 255)
             continue;
-        int j = 0;
+        int j = sc;
+        sc = 0;
         for(; j < 8; ++j) {
-            if(i == 0 && j == 0)
-                continue;
+            /*if(i == 0 && j == 0)
+                continue;*/
             unsigned char tmp = cs;
             tmp &= mask[j];
             tmp >>= mask_off[j];
@@ -74,6 +79,11 @@ dev_free_cluster(fcfs_args_t *args) {
         }
     }
     return -1;
+}
+
+int
+dev_free_cluster(fcfs_args_t *args) {
+    return dev_free_cluster_from(args, 0);
 }
 
 int
@@ -164,13 +174,15 @@ dev_free_blocks(fcfs_args_t *args, int count, int *size) {
     dev_blk_info_t *res = calloc(1, sizeof(dev_blk_info_t) * count);
 
     size_t i = 0;
+    int old_cid = 0;
     for(; i < count;) {
-        int cid = dev_free_cluster(args);
+        int cid = dev_free_cluster_from(args, old_cid);
         fcfs_block_list_t *bl = dev_read_ctable(args, cid);
         int b_len = 0;
         int *blist = dev_get_blocks(bl, 0, &b_len);
         for(size_t j = 0; j < b_len && i < count; ++j) {
             res[i].cid = cid;
+            old_cid = cid;
             res[i].bid = blist[j];
             res[i].num = 0;
             i++;
@@ -259,4 +271,18 @@ dev_file_reserve(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, in
     }
     dev_write_table(args);
     return 0;
+}
+
+int
+dev_extd_blk_list(fcfs_args_t *args, dev_blk_info_t **inf, int seq_sz,int count, int fid) {
+    int new_seq_sz = 0;
+    dev_blk_info_t *blks = dev_free_blocks(args, count, &new_seq_sz);
+    dev_file_reserve(args, fid, blks, new_seq_sz, (*inf)[seq_sz - 1].num);
+    dev_blk_info_t *tmp = calloc(1, (new_seq_sz + seq_sz) * sizeof(dev_blk_info_t));
+    memcpy(tmp, *inf, sizeof(dev_blk_info_t) * seq_sz);
+    memcpy(tmp + seq_sz, blks, sizeof(dev_blk_info_t) * new_seq_sz);
+    free(*inf);
+    free(blks);
+    *inf = tmp;
+    return seq_sz += new_seq_sz;
 }

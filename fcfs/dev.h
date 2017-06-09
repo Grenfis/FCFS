@@ -94,4 +94,10 @@ dev_file_reserve(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, in
 int
 dev_set_file_size(fcfs_args_t *args, int fid, int size);
 
+int
+dev_extd_blk_list(fcfs_args_t *args, dev_blk_info_t **inf, int seq_sz,int count, int fid);
+
+int
+dev_free_cluster_from(fcfs_args_t *args, int cid);
+
 #endif

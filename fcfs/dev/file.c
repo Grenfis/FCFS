@@ -55,22 +55,22 @@ dev_create_file(fcfs_args_t *args, int pfid, int fid, const char *name, mode_t m
     fcfs_dir_entry_t *tmp = NULL;
 
     int new_pos = -1;
-    for(size_t i = 0; i < dirs_len; ++i) {
+    /*for(size_t i = 0; i < dirs_len; ++i) {
         if(strlen(dirs[i].name) == 0) {
             new_pos = i;
             break;
         }
-    }
+    }*/
 
-    if(new_pos != -1) {
+    /*if(new_pos != -1) {
         tmp = dirs;
-    }else{
-        dirs_len += 1;
-        tmp = calloc(1, sizeof(fcfs_dir_entry_t) * dirs_len);
-        memcpy(tmp, dirs, sizeof(fcfs_dir_entry_t) * (dirs_len - 1));
-        free(dirs);
-        new_pos = dirs_len - 1;
-    }
+    }else{*/
+    dirs_len += 1;
+    tmp = calloc(1, sizeof(fcfs_dir_entry_t) * dirs_len);
+    memcpy(tmp, dirs, sizeof(fcfs_dir_entry_t) * (dirs_len - 1));
+    free(dirs);
+    new_pos = dirs_len - 1;
+    //}
 
     dev_file_alloc(args, fid);
     tmp[new_pos].fid       = fid; //set free file id
