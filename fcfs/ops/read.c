@@ -27,12 +27,18 @@ ops_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_fil
     int sz_cnt = to_blk_cnt(blk_off + size, lblk_sz);
 
     char tmp[lblk_sz * sz_cnt];
+    int res = 0;
     for(size_t i = 0; i < sz_cnt; ++i) {
-        dev_read_by_id(args, fid, blk_num, tmp + i * lblk_sz, lblk_sz);
+        res = dev_read_by_id(args, fid, blk_num, tmp + i * lblk_sz, lblk_sz);
+        if(res < 0)
+            goto error;
         blk_num++;
     }
 
     memcpy(buf, tmp + blk_off, size);
 
     return size;
+error:
+    ERROR("smth wrong");
+    return -1;
 }

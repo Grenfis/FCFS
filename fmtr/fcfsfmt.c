@@ -98,6 +98,23 @@ int main(int argc, char *argv[]) {
     }
     free(fs_table);
     printf("%d bytes writed.\n", res);
+    ////////////////////prepare first block for root/////////
+    printf("Root block table writing... ");
+    char first_table[dta_blk];
+    fcfs_block_list_t *bl = calloc(1, sizeof(fcfs_block_list_t));
+    for(size_t i = 0; i < FCFS_BLOKS_PER_CLUSTER - 1; ++i) {
+        bl->entrs[i].num = i;
+    }
+    memcpy(first_table, bl, sizeof(fcfs_block_list_t));
+
+    fseek(device, fs_head->dta_beg * dta_blk, SEEK_SET);
+    res = fwrite(first_table, 1, dta_blk, device);
+    if(res != dta_blk) {
+        printf("[ERROR] root block table write\n");
+        exit(-1);
+    }
+    free(bl);
+    printf("%d bytes writed.\n", res);
     ////////////////////dispose resources////////////////////
     fclose(device);
     free(fs_head);

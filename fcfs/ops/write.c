@@ -30,12 +30,17 @@ ops_write(const char *path, const char *data, size_t size, off_t offset, struct 
     }
 
     char tmp_buf[lblk_sz * sz_cnt];
+    int res = 0;
     for(size_t i = 0; i < sz_cnt; ++i) {
-        dev_read_by_id(args, fid, blk_num + i, tmp_buf + lblk_sz * i, lblk_sz);
+        res = dev_read_by_id(args, fid, blk_num + i, tmp_buf + lblk_sz * i, lblk_sz);
+        if(res < 0)
+            goto error;
     }
     memcpy(tmp_buf + blk_off, data, size);
     for(size_t i = 0; i < sz_cnt; ++i) {
-        dev_write_by_id(args, fid, blk_num + i, tmp_buf + lblk_sz * i, lblk_sz);
+        res = dev_write_by_id(args, fid, blk_num + i, tmp_buf + lblk_sz * i, lblk_sz);
+        if(res < 0)
+            goto error;
     }
 
     int sz = dev_file_size(args, fid);
@@ -45,4 +50,8 @@ ops_write(const char *path, const char *data, size_t size, off_t offset, struct 
     dev_set_file_size(args, fid, sz);
 
     return size;
+
+error:
+    ERROR("smth wrong");
+    return -1;
 }
