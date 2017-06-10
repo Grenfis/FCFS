@@ -100,4 +100,23 @@ dev_extd_blk_list(fcfs_args_t *args, dev_blk_info_t **inf, int seq_sz,int count,
 int
 dev_free_cluster_from(fcfs_args_t *args, int cid);
 
+int
+dev_clust_claim(fcfs_args_t *args, int cid);
+
+unsigned int
+dev_full_free_cluster(fcfs_args_t *args);
+
+//fs table
+int
+dev_tbl_clrs_cnt(fcfs_args_t *args, int fid);
+
+int
+dev_tbl_clrs_get(fcfs_args_t *args, int fid, int id);
+
+int
+dev_tbl_clrs_add(fcfs_args_t *args, int fid, int id);
+
+int
+dev_tbl_clrs_set(fcfs_args_t *args, int fid, int id, int val);
+
 #endif

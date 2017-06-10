@@ -19,6 +19,24 @@ static unsigned char mask[] = {
 };
 static int mask_off[] = {7,6,5,4,3,2,1,0};
 
+unsigned int
+dev_full_free_cluster(fcfs_args_t *args) {
+    DEBUG();
+    int start = 0;
+    int cid = 0;
+    int b_len = 0;
+    do {
+        cid = dev_free_cluster_from(args, start);
+        fcfs_block_list_t *bl = dev_read_ctable(args, cid);
+        b_len = 0;
+        int *blist = dev_get_blocks(bl, 0, &b_len);
+        free(blist);
+        free(bl);
+        start = cid + 1;
+    }while(b_len != 7);
+    return cid;
+}
+
 char
 dev_upd_bitmap(fcfs_args_t *args, fcfs_block_list_t *bl, int cid) {
     DEBUG();
@@ -139,7 +157,7 @@ int
 dev_file_size(fcfs_args_t *args, int fid) {
     DEBUG();
 
-    int lblk_sz = args->fs_head->phy_blk_sz + args->fs_head->blk_sz;
+    int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
     fcfs_file_header_t fh;
     char buf[lblk_sz];
     int res = dev_read_by_id(args, fid, 0, buf, lblk_sz);
@@ -153,7 +171,7 @@ int
 dev_set_file_size(fcfs_args_t *args, int fid, int size) {
     DEBUG();
 
-    int lblk_sz = args->fs_head->phy_blk_sz + args->fs_head->blk_sz;
+    int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
     fcfs_file_header_t fh;
     fh.f_sz = size;
 
@@ -197,7 +215,8 @@ dev_free_blocks(fcfs_args_t *args, int count, int *size) {
 
 int
 dev_del_block(fcfs_args_t *args, int fid, int cid, int bid) {
-    fcfs_table_entry_t *tentry = &args->fs_table->entrs[fid];
+    //fcfs_table_entry_t *tentry = &args->fs_table->entrs[fid];
+    int clust_cnt = dev_tbl_clrs_cnt(args, fid);
     fcfs_block_list_t *bl = dev_read_ctable(args, cid);
 
     int b_len = 0;
@@ -211,9 +230,11 @@ dev_del_block(fcfs_args_t *args, int fid, int cid, int bid) {
     dev_write_block(args, cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
 
     if(b_len == 1) {
-        for(size_t i = 0; i < FCFS_CLUSTER_PER_FILE - 1; ++i) {
-            if(tentry->clrs[i] == cid)
-                tentry->clrs[i] = 0;
+        for(size_t i = 0; i < clust_cnt; ++i) {
+            //if(tentry->clrs[i] == cid)
+            if(dev_tbl_clrs_get(args, fid, i) == cid)
+                //tentry->clrs[i] = 0;
+                dev_tbl_clrs_set(args, fid, i, 0);
         }
         dev_write_table(args);
     }
@@ -230,33 +251,18 @@ dev_file_reserve(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, in
         ERROR("root can not be resize");
         return -1;
     }
-    fcfs_table_entry_t *tentry = &args->fs_table->entrs[fid];
-    int l_cl = 0;
-    for(size_t i = 0; i < FCFS_CLUSTER_PER_FILE; ++i) {
-        if(i != FCFS_CLUSTER_PER_FILE - 1) {
-            if(tentry->clrs[i] == 0) {
-                l_cl = i;
+    int clust_cnt = dev_tbl_clrs_cnt(args, fid);
+    for(size_t i = 0; i < seq_sz; ++i) {
+        char f = 0;
+        for(size_t j = 0; j < clust_cnt; ++j) {
+            if( dev_tbl_clrs_get(args, fid, j) == inf[i].cid) {
+                f = 1;
                 break;
             }
-        }else{
-            ERROR("not enouth spase in calster seq");
-            return -1;
         }
-    }
-    for(size_t i = 0; i < seq_sz; ++i) {
-        if(l_cl < FCFS_CLUSTER_PER_FILE - 1) {
-            for(size_t j = 0; j < FCFS_CLUSTER_PER_FILE - 1; ++j) {
-                if(inf[i].cid == tentry->clrs[j])
-                    break;
-                else if(tentry->clrs[j] == 0) {
-                    tentry->clrs[j] = inf[i].cid;
-                    l_cl++;
-                    break;
-                }
-            }
-        }else{
-            ERROR("not enouth spase in calster seq");
-            return -1;
+        if(f != 1) {
+            dev_tbl_clrs_add(args, fid, inf[i].cid);
+            clust_cnt++;
         }
         last_num++;
         fcfs_block_list_t *bl = dev_read_ctable(args, inf[i].cid);
@@ -285,4 +291,21 @@ dev_extd_blk_list(fcfs_args_t *args, dev_blk_info_t **inf, int seq_sz,int count,
     free(blks);
     *inf = tmp;
     return seq_sz += new_seq_sz;
+}
+
+int
+dev_clust_claim(fcfs_args_t *args, int cid) {
+    DEBUG();
+    fcfs_block_list_t *bl = dev_read_ctable(args, cid);
+
+    for(size_t i = 0; i < FCFS_BLOKS_PER_CLUSTER - 1; ++i) {
+        bl->entrs[i].fid = -1;
+        bl->entrs[i].num = i;
+    }
+
+    dev_write_block(args, cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
+    if(!dev_upd_bitmap(args, bl, cid))
+        dev_write_bitmap(args);
+    free(bl);
+    return 0;
 }

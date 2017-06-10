@@ -15,12 +15,14 @@ dev_rm_file(fcfs_args_t *args, int fid, int pfid) {
         return -1;
 
     fcfs_table_entry_t *tentry = &args->fs_table->entrs[fid];
+    int clust_cnt = dev_tbl_clrs_cnt(args, fid);
     tentry->lnk_cnt--;
     if(tentry->lnk_cnt != 0)
         return -1;
 
-    for(size_t i = 0; i < FCFS_CLUSTER_PER_FILE - 1; ++i) {
-        int cid = tentry->clrs[i];
+    for(size_t i = 0; i < clust_cnt; ++i) {
+        //int cid = tentry->clrs[i];
+        int cid = dev_tbl_clrs_get(args, fid, i);
         if(cid == 0)
             break;
 
@@ -89,12 +91,14 @@ dev_create_file(fcfs_args_t *args, int pfid, int fid, const char *name, mode_t m
 int
 dev_init_file(fcfs_args_t *args, int fid) {
     DEBUG();
-    fcfs_table_entry_t *tentry = &args->fs_table->entrs[fid];
+    //fcfs_table_entry_t *tentry = &args->fs_table->entrs[fid];
+    //int clust_cnt = dev_tbl_clrs_cnt(args, fid);
 
     fcfs_file_header_t fh;
     memset(&fh, 0, sizeof(fcfs_file_header_t));
 
-    int cid = tentry->clrs[0];
+    //int cid = tentry->clrs[0];
+    int cid = dev_tbl_clrs_get(args, fid, 0);
     fcfs_block_list_t *bl = dev_read_ctable(args, cid);
 
     int b_len = 0;
@@ -110,12 +114,14 @@ dev_init_file(fcfs_args_t *args, int fid) {
 dev_blk_info_t *
 dev_get_file_seq(fcfs_args_t *args, int fid, int *size) {
     DEBUG();
-    fcfs_table_entry_t *tentry = &args->fs_table->entrs[fid];
+    //fcfs_table_entry_t *tentry = &args->fs_table->entrs[fid];
+    int clust_cnt = dev_tbl_clrs_cnt(args, fid);
 
     dev_blk_info_t tmp[(FCFS_CLUSTER_PER_FILE - 1) * FCFS_BLOKS_PER_CLUSTER];
     int k = 0;
-    for(size_t i = 0; i < FCFS_CLUSTER_PER_FILE - 1; ++i) {
-        int cid = tentry->clrs[i];
+    for(size_t i = 0; i < clust_cnt; ++i) {
+        //int cid = tentry->clrs[i];
+        int cid = dev_tbl_clrs_get(args, fid, i);
         if(fid != 0 && cid == 0)
             break;
 
