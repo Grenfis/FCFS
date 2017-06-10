@@ -188,11 +188,11 @@ dev_tbl_clrs_add(fcfs_args_t *args, int fid, int id) {
     }else if(count >= (FCFS_CLUSTER_PER_FILE - 3) && count < s1_len) {
         if(clrs_cache.s1_cnt == 0) {
             tentry->clrs[(FCFS_CLUSTER_PER_FILE - 3)] = dev_tbl_calim_sec_addr(args, fid);
+            dev_write_table(args);
         }
         clrs_cache.s1_cl[clrs_cache.s1_cnt] = id;
         clrs_cache.s1_cnt++;
         dev_tbl_save_sec(args, args->fs_table->entrs[fid].clrs[FCFS_CLUSTER_PER_FILE - 3]);
-        dev_write_table(args);
     }/*else if(id == (FCFS_CLUSTER_PER_FILE - 2)) {
 
     }else if(id == (FCFS_CLUSTER_PER_FILE - 1)) {
