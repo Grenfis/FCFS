@@ -1,10 +1,8 @@
 #include "../dev.h"
 #include "cache.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <scsi.h>
 #include <debug.h>
 
 static dev_clrs_cache_t clrs_cache = {
@@ -12,11 +10,11 @@ static dev_clrs_cache_t clrs_cache = {
 };
 
 unsigned int
-dev_tbl_calim_sec_addr(fcfs_args_t *args, int fid) {
+dev_tbl_claim_sec_addr(fcfs_args_t *args, int fid) {
     DEBUG("");
     int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
 
-    int cid = dev_full_free_cluster(args);
+    unsigned int cid = dev_full_free_cluster(args);
     dev_clust_claim(args, cid);
 
     clrs_cache.s1_cl = calloc(1, ((FCFS_BLOKS_PER_CLUSTER - 1) * lblk_sz) - sizeof(unsigned));
@@ -69,11 +67,6 @@ dev_tbl_save_sec(fcfs_args_t *args, int cid) {
     int off = sizeof(unsigned int);
 
     char buf[(FCFS_BLOKS_PER_CLUSTER - 1) * lblk_sz];
-    /*for(size_t i = 1; i < FCFS_BLOKS_PER_CLUSTER - 1; ++i) {
-        char *b = dev_read_block(args, cid, i);
-        memcpy(buf + (i - 1) * lblk_sz, b, lblk_sz);
-        free(b);
-    }*/
     memcpy(buf, &clrs_cache.s1_cnt, off);
     memcpy(buf + off, clrs_cache.s1_cl, ((FCFS_BLOKS_PER_CLUSTER - 1) * lblk_sz) - off);
 
@@ -121,19 +114,11 @@ dev_tbl_clrs_cnt(fcfs_args_t *args, int fid) {
     cid = tentry->clrs[FCFS_CLUSTER_PER_FILE - 2];
     if(cid != 0) {
         DEBUG("third");
-        /*if(clrs_cache.s2_cnt == 0)
-            //count += dev_tbl_chk_sec(args, cid);
-        else
-            count += clrs_cache.s2_cnt;*/
     }
     //check for fourth stage
     cid = tentry->clrs[FCFS_CLUSTER_PER_FILE - 1];
     if(cid != 0) {
         DEBUG("fourth");
-        /*if(clrs_cache.s3_cnt == 0)
-            count += dev_tbl_chk_sec(args, cid);
-        else
-            count += clrs_cache.s3_cnt;*/
     }
 
     return count;
@@ -162,10 +147,7 @@ dev_tbl_clrs_get(fcfs_args_t *args, int fid, int id) {
             ERROR();
             return -1;
         }
-    }/*else if(id == (FCFS_CLUSTER_PER_FILE - 2)) {
-
-    }else if(id == (FCFS_CLUSTER_PER_FILE - 1)) {
-    }*/else{
+    }else{
         ERROR("impossible id");
         return -1;
     }
@@ -188,17 +170,13 @@ dev_tbl_clrs_add(fcfs_args_t *args, int fid, int id) {
         dev_write_table(args);
     }else if(count >= (FCFS_CLUSTER_PER_FILE - 3) && count < s1_len) {
         if(clrs_cache.s1_cnt == 0) {
-            tentry->clrs[(FCFS_CLUSTER_PER_FILE - 3)] = dev_tbl_calim_sec_addr(args, fid);
+            tentry->clrs[(FCFS_CLUSTER_PER_FILE - 3)] = dev_tbl_claim_sec_addr(args, fid);
             dev_write_table(args);
         }
         clrs_cache.s1_cl[clrs_cache.s1_cnt] = id;
         clrs_cache.s1_cnt++;
         dev_tbl_save_sec(args, args->fs_table->entrs[fid].clrs[FCFS_CLUSTER_PER_FILE - 3]);
-    }/*else if(id == (FCFS_CLUSTER_PER_FILE - 2)) {
-
-    }else if(id == (FCFS_CLUSTER_PER_FILE - 1)) {
-
-    }*/else{
+    }else{
         ERROR("impossible id");
         return -1;
     }
@@ -230,11 +208,7 @@ dev_tbl_clrs_set(fcfs_args_t *args, int fid, int id, int val) {
             ERROR();
             return -1;
         }
-    }/*else if(id == (FCFS_CLUSTER_PER_FILE - 2)) {
-
-    }else if(id == (FCFS_CLUSTER_PER_FILE - 1)) {
-
-    }*/else{
+    }else{
         ERROR("impossible id");
         return -1;
     }

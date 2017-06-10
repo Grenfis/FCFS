@@ -1,9 +1,7 @@
 #include "../dev.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <scsi.h>
 #include <errno.h>
 
 #include <debug.h>
@@ -57,16 +55,6 @@ dev_create_file(fcfs_args_t *args, int pfid, int fid, const char *name, mode_t m
     fcfs_dir_entry_t *tmp = NULL;
 
     int new_pos = -1;
-    /*for(size_t i = 0; i < dirs_len; ++i) {
-        if(strlen(dirs[i].name) == 0) {
-            new_pos = i;
-            break;
-        }
-    }*/
-
-    /*if(new_pos != -1) {
-        tmp = dirs;
-    }else{*/
     dirs_len += 1;
     tmp = calloc(1, sizeof(fcfs_dir_entry_t) * dirs_len);
     memcpy(tmp, dirs, sizeof(fcfs_dir_entry_t) * (dirs_len - 1));
@@ -91,13 +79,10 @@ dev_create_file(fcfs_args_t *args, int pfid, int fid, const char *name, mode_t m
 int
 dev_init_file(fcfs_args_t *args, int fid) {
     DEBUG();
-    //fcfs_table_entry_t *tentry = &args->fs_table->entrs[fid];
-    //int clust_cnt = dev_tbl_clrs_cnt(args, fid);
 
     fcfs_file_header_t fh;
     memset(&fh, 0, sizeof(fcfs_file_header_t));
 
-    //int cid = tentry->clrs[0];
     int cid = dev_tbl_clrs_get(args, fid, 0);
     fcfs_block_list_t *bl = dev_read_ctable(args, cid);
 

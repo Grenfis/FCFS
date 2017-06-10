@@ -1,33 +1,9 @@
 #include "../dev.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <scsi.h>
 
 #include <debug.h>
-
-int
-dev_write_header(fcfs_args_t *args) {
-    DEBUG("");
-    int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
-    char *blk_buf = calloc(1, lblk_sz);
-    memcpy(blk_buf, args->fs_head, sizeof(fcfs_head_t));
-
-    int res = fseek(args->dev, 0, SEEK_SET);
-    if(res == 1L) {
-        ERROR("seeking device");
-        return -1;
-    }
-
-    res = fwrite(blk_buf, 1, lblk_sz, args->dev);
-    if(res != lblk_sz) {
-        ERROR("writing head");
-    }
-
-    free(blk_buf);
-    return 0;
-}
 
 int
 dev_write_bitmap(fcfs_args_t *args) {

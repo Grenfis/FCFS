@@ -103,7 +103,7 @@ dev_free_cluster_from(fcfs_args_t *args, int cid);
 int
 dev_clust_claim(fcfs_args_t *args, int cid);
 
-unsigned int
+int
 dev_full_free_cluster(fcfs_args_t *args);
 
 //fs table

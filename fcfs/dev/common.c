@@ -19,7 +19,7 @@ static unsigned char mask[] = {
 };
 static int mask_off[] = {7,6,5,4,3,2,1,0};
 
-unsigned int
+int
 dev_full_free_cluster(fcfs_args_t *args) {
     DEBUG();
     int start = 0;
@@ -74,12 +74,12 @@ int
 dev_free_cluster_from(fcfs_args_t *args, int cid) {
     DEBUG();
     unsigned char *bitmap = args->fs_bitmap;
-    int btm_len = args->fs_head->clu_cnt;
+    unsigned long btm_len = args->fs_head->clu_cnt;
 
     int sg = cid / 8.0;
     int sc = (cid % 8) + 1;
 
-    for(size_t i = sg; i < btm_len; ++i) {
+    for(int i = sg; i < btm_len; ++i) {
         unsigned char cs = bitmap[i];
         if(cs == 255)
             continue;
@@ -109,7 +109,7 @@ dev_free_fid(fcfs_args_t *args) {
     DEBUG();
     fcfs_table_t *table = args->fs_table;
     int tbl_len = args->fs_head->tbl_cnt;
-    for(size_t i = 1; i < tbl_len; ++i) {
+    for(int i = 1; i < tbl_len; ++i) {
         if(table->entrs[i].lnk_cnt == 0)
             return i;
     }
@@ -285,21 +285,6 @@ dev_file_reserve(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, in
         if(!dev_upd_bitmap(args, bl, inf[i].cid))
             dev_write_bitmap(args);
         free(bl);
-
-        /*char f = 0;
-        for(size_t j = 0; j < clust_cnt; ++j) {
-            int t = dev_tbl_clrs_get(args, fid, j);
-            if(t == inf[i].cid) {
-                f = 1;
-                break;
-            }else if(t < 0) {
-                return -1;
-            }
-        }
-        if(f != 1) {
-            dev_tbl_clrs_add(args, fid, inf[i].cid);
-            clust_cnt++;
-        }*/
     }
     dev_file_mem_clrs(args, fid, inf, seq_sz, clust_cnt);
     dev_write_table(args);
