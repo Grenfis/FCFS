@@ -32,8 +32,8 @@ dev_full_free_cluster(fcfs_args_t *args) {
         int *blist = dev_get_blocks(bl, 0, &b_len);
         free(blist);
         free(bl);
-        start = cid + 1;
-    }while(b_len != 7);
+        start = cid;
+    }while(b_len != (FCFS_BLOKS_PER_CLUSTER - 1));
     return cid;
 }
 
@@ -245,6 +245,26 @@ dev_del_block(fcfs_args_t *args, int fid, int cid, int bid) {
     return 0;
 }
 
+void
+dev_file_mem_clrs(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, int clust_cnt) {
+    for(size_t i = 0; i < seq_sz; ++i) {
+        char f = 0;
+        for(size_t j = 0; j < clust_cnt; ++j) {
+            int t = dev_tbl_clrs_get(args, fid, j);
+            if(t == inf[i].cid) {
+                f = 1;
+                break;
+            }else if(t < 0) {
+                //return -1;
+            }
+        }
+        if(f != 1) {
+            dev_tbl_clrs_add(args, fid, inf[i].cid);
+            clust_cnt++;
+        }
+    }
+}
+
 int
 dev_file_reserve(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, int last_num) {
     if(fid == 0) {
@@ -252,6 +272,8 @@ dev_file_reserve(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, in
         return -1;
     }
     int clust_cnt = dev_tbl_clrs_cnt(args, fid);
+    if(clust_cnt < 0)
+        return -1;
     for(size_t i = 0; i < seq_sz; ++i) {
         last_num++;
         fcfs_block_list_t *bl = dev_read_ctable(args, inf[i].cid);
@@ -264,18 +286,22 @@ dev_file_reserve(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, in
             dev_write_bitmap(args);
         free(bl);
 
-        char f = 0;
+        /*char f = 0;
         for(size_t j = 0; j < clust_cnt; ++j) {
-            if( dev_tbl_clrs_get(args, fid, j) == inf[i].cid) {
+            int t = dev_tbl_clrs_get(args, fid, j);
+            if(t == inf[i].cid) {
                 f = 1;
                 break;
+            }else if(t < 0) {
+                return -1;
             }
         }
         if(f != 1) {
             dev_tbl_clrs_add(args, fid, inf[i].cid);
             clust_cnt++;
-        }
+        }*/
     }
+    dev_file_mem_clrs(args, fid, inf, seq_sz, clust_cnt);
     dev_write_table(args);
     return 0;
 }
@@ -284,7 +310,9 @@ int
 dev_extd_blk_list(fcfs_args_t *args, dev_blk_info_t **inf, int seq_sz,int count, int fid) {
     int new_seq_sz = 0;
     dev_blk_info_t *blks = dev_free_blocks(args, count, &new_seq_sz);
-    dev_file_reserve(args, fid, blks, new_seq_sz, (*inf)[seq_sz - 1].num);
+    int res = dev_file_reserve(args, fid, blks, new_seq_sz, (*inf)[seq_sz - 1].num);
+    if(res < 0)
+        return -1;
     dev_blk_info_t *tmp = calloc(1, (new_seq_sz + seq_sz) * sizeof(dev_blk_info_t));
     memcpy(tmp, *inf, sizeof(dev_blk_info_t) * seq_sz);
     memcpy(tmp + seq_sz, blks, sizeof(dev_blk_info_t) * new_seq_sz);

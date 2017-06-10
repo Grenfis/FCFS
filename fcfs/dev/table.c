@@ -90,14 +90,15 @@ dev_tbl_clrs_cnt(fcfs_args_t *args, int fid) {
 
     if(clrs_cache.fid != fid) {
         clrs_cache.fid = fid;
-        clrs_cache.s0_cnt = 0;
-        clrs_cache.s1_cnt = 0;
-        clrs_cache.s2_cnt = 0;
 
         if(clrs_cache.s1_cnt != 0)
             free(clrs_cache.s1_cl);
         if(clrs_cache.s2_cnt != 0)
             free(clrs_cache.s2_cl);
+
+        clrs_cache.s0_cnt = 0;
+        clrs_cache.s1_cnt = 0;
+        clrs_cache.s2_cnt = 0;
     }
 
     unsigned int count = 0;

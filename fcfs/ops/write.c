@@ -27,6 +27,8 @@ ops_write(const char *path, const char *data, size_t size, off_t offset, struct 
 
     if(seq_sz < (blk_num + sz_cnt)) {
         seq_sz = dev_extd_blk_list(args, &inf, seq_sz, (blk_num + sz_cnt) - seq_sz, fid);
+        if(seq_sz < 0)
+            return -1;
     }
 
     char tmp_buf[lblk_sz * sz_cnt];
