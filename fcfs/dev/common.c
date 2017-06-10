@@ -253,6 +253,17 @@ dev_file_reserve(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, in
     }
     int clust_cnt = dev_tbl_clrs_cnt(args, fid);
     for(size_t i = 0; i < seq_sz; ++i) {
+        last_num++;
+        fcfs_block_list_t *bl = dev_read_ctable(args, inf[i].cid);
+        bl->entrs[inf[i].bid - 1].fid = fid;
+        bl->entrs[inf[i].bid - 1].num = last_num;
+        dev_write_block(args, inf[i].cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
+        inf[i].num = last_num;
+
+        if(!dev_upd_bitmap(args, bl, inf[i].cid))
+            dev_write_bitmap(args);
+        free(bl);
+
         char f = 0;
         for(size_t j = 0; j < clust_cnt; ++j) {
             if( dev_tbl_clrs_get(args, fid, j) == inf[i].cid) {
@@ -264,16 +275,6 @@ dev_file_reserve(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, in
             dev_tbl_clrs_add(args, fid, inf[i].cid);
             clust_cnt++;
         }
-        last_num++;
-        fcfs_block_list_t *bl = dev_read_ctable(args, inf[i].cid);
-        bl->entrs[inf[i].bid - 1].fid = fid;
-        bl->entrs[inf[i].bid - 1].num = last_num;
-        dev_write_block(args, inf[i].cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
-        inf[i].num = last_num;
-
-        if(!dev_upd_bitmap(args, bl, inf[i].cid))
-            dev_write_bitmap(args);
-        free(bl);
     }
     dev_write_table(args);
     return 0;

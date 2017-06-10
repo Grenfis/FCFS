@@ -49,7 +49,7 @@ dev_tbl_load_sec(fcfs_args_t *args, int cid) {
     char buf[(FCFS_BLOKS_PER_CLUSTER - 1) * lblk_sz];
     for(size_t i = 1; i < FCFS_BLOKS_PER_CLUSTER - 1; ++i) {
         char *b = dev_read_block(args, cid, i);
-        memcpy(buf + i * lblk_sz, b, lblk_sz);
+        memcpy(buf + (i - 1) * lblk_sz, b, lblk_sz);
         free(b);
     }
     unsigned int off = sizeof(unsigned int);
@@ -156,7 +156,7 @@ dev_tbl_clrs_get(fcfs_args_t *args, int fid, int id) {
         }
     }else if(id >= (FCFS_CLUSTER_PER_FILE - 3) && id < s1_len) {
         if(clrs_cache.s1_cnt != 0) {
-            return clrs_cache.s1_cl[id];
+            return clrs_cache.s1_cl[id - (FCFS_CLUSTER_PER_FILE - 3)];
         }else{
             ERROR();
             return -1;
@@ -192,6 +192,7 @@ dev_tbl_clrs_add(fcfs_args_t *args, int fid, int id) {
         clrs_cache.s1_cl[clrs_cache.s1_cnt] = id;
         clrs_cache.s1_cnt++;
         dev_tbl_save_sec(args, args->fs_table->entrs[fid].clrs[FCFS_CLUSTER_PER_FILE - 3]);
+        dev_write_table(args);
     }/*else if(id == (FCFS_CLUSTER_PER_FILE - 2)) {
 
     }else if(id == (FCFS_CLUSTER_PER_FILE - 1)) {
