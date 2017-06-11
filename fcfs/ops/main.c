@@ -2,24 +2,26 @@
 #include "cache.h"
 
 void *
-ops_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
+ops_init(struct fuse_conn_info *conn, struct fuse_config *cfg)
+{
     DEBUG("");
     fcfs_args_t *args = fcfs_get_args();
     args->dev = fopen(args->p_dev, "w+b");
 
     int res = dev_mount(args);
-    if(res != 0) {
+    if(res != 0)
+    {
         ERROR("when mounting");
         exit(-1);
     }
 
     cache_init();
-    //cache_fid_add("/", 0);
     return (void*)args;
 }
 
 void
-ops_destroy(void *a) {
+ops_destroy(void *a)
+{
     DEBUG("");
     fcfs_args_t *args = (fcfs_args_t*)a;
     cache_destroy();

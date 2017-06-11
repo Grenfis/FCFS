@@ -51,10 +51,12 @@ static struct fuse_opt fcfs_opt[] = {
 
 //input string format in s is "-arg=smth"
 char *
-get_opt(const char *s, int *len) {
+get_opt(const char *s, int *len)
+{
     DEBUG("");
     char *pos = strstr(s, "=");
-    if(pos == NULL) {
+    if(pos == NULL)
+    {
         DEBUG("\"=\" not found");
         return NULL;
     }
@@ -67,12 +69,14 @@ get_opt(const char *s, int *len) {
 }
 
 static int
-fcfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs) {
+fcfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs)
+{
     DEBUG("arg = %s", arg);
 
     int len = 0;
     char *a = NULL;
-    switch(key) {
+    switch(key)
+    {
         case FCFS_OPT_VER:
             fuse_opt_add_arg(outargs, "--version");
             break;
@@ -107,18 +111,24 @@ main(int argc, char *argv[])
     memset(&fc_args, 0, sizeof(fcfs_args_t));
     fuse_opt_parse(&fu_args, &fc_args, fcfs_opt, fcfs_opt_proc);
     //get password if it not specify
-    if(fc_args.passwd == NULL || strlen(fc_args.passwd) < FCFS_MIN_PASSWORD_LEN) {
+    if(fc_args.passwd == NULL || strlen(fc_args.passwd) < FCFS_MIN_PASSWORD_LEN)
+    {
         char *buf = calloc(1, PASSWD_BUF_LEN);
         unsigned char c_buf_pos = 0;
         char c = '\0';
         char p_req = 1;
         printf("Enter password:\n");
-        while(p_req) {
-            switch(c = getch()) {
+        while(p_req)
+        {
+            switch(c = getch())
+            {
                 case '\n':
-                    if(c_buf_pos >= FCFS_MIN_PASSWORD_LEN) {
+                    if(c_buf_pos >= FCFS_MIN_PASSWORD_LEN)
+                    {
                         p_req = 0;
-                    }else{
+                    }
+                    else
+                    {
                         printf("Password too short!\n");
                     }
                     break;
@@ -133,7 +143,8 @@ main(int argc, char *argv[])
         memcpy(fc_args.passwd, buf, c_buf_pos);
         free(buf);
     }
-    for(size_t i = 0; i < fu_args.argc; ++i) {
+    for(size_t i = 0; i < fu_args.argc; ++i)
+    {
         DEBUG("argv[%lu] = %s", i, fu_args.argv[i]);
     }
     //run daemon

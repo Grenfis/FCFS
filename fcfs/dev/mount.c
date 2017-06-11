@@ -7,12 +7,14 @@
 #include <debug.h>
 
 static fcfs_head_t *
-read_head(FILE *dev, int l_blk_sz) {
+read_head(FILE *dev, int l_blk_sz)
+{
     DEBUG("");
     char *head_buf = calloc(1, l_blk_sz);
     fcfs_head_t *head = calloc(1, sizeof(fcfs_head_t));
     int res = fread(head_buf, 1, l_blk_sz, dev);
-    if(res != l_blk_sz) {
+    if(res != l_blk_sz)
+    {
         ERROR("can not read fs head from dev");
         exit(-1);
     }
@@ -22,11 +24,13 @@ read_head(FILE *dev, int l_blk_sz) {
 }
 
 static unsigned char *
-read_bitmap(FILE *dev, int bytes) {
+read_bitmap(FILE *dev, int bytes)
+{
     DEBUG("");
     unsigned char *bitmap = calloc(1, bytes);
     int res = fread(bitmap, 1, bytes, dev);
-    if(res != bytes) {
+    if(res != bytes)
+    {
         ERROR("can not read bitmap from dev");
         exit(-1);
     }
@@ -34,12 +38,14 @@ read_bitmap(FILE *dev, int bytes) {
 }
 
 static fcfs_table_t *
-read_table(FILE *dev, int bytes) {
+read_table(FILE *dev, int bytes)
+{
     DEBUG("");
     char *table_buf = calloc(1, bytes);
     fcfs_table_t *table = calloc(1, sizeof(fcfs_table_t));
     int res = fread(table_buf, 1, bytes, dev);
-    if(res != bytes) {
+    if(res != bytes)
+    {
         ERROR("can not read table from dev");
         exit(-1);
     }
@@ -49,12 +55,14 @@ read_table(FILE *dev, int bytes) {
 }
 
 int
-dev_mount(fcfs_args_t *args) {
+dev_mount(fcfs_args_t *args)
+{
     DEBUG("");
 
     dsc_info_t *d_info = calloc(1, sizeof(dsc_info_t));
     int res = get_disc_info(args->p_dev, d_info);
-    if(res != 0) {
+    if(res != 0)
+    {
         ERROR("could not get info about drive");
         return -1;
     }
@@ -63,7 +71,8 @@ dev_mount(fcfs_args_t *args) {
     free(d_info);
 
     res = fseek(args->dev, 0, SEEK_SET);
-    if(res == 1L) {
+    if(res == 1L)
+    {
         ERROR("seeking to beginning device");
         return -1;
     }

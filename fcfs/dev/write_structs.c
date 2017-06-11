@@ -6,7 +6,8 @@
 #include <debug.h>
 
 int
-dev_write_bitmap(fcfs_args_t *args) {
+dev_write_bitmap(fcfs_args_t *args)
+{
     DEBUG("");
     int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
     int btm_blk_len = args->fs_head->bmp_len * lblk_sz;
@@ -14,13 +15,15 @@ dev_write_bitmap(fcfs_args_t *args) {
     memcpy(blk_buf, args->fs_bitmap, args->fs_head->clu_cnt / 8.0);
 
     int res = fseek(args->dev, lblk_sz, SEEK_SET);
-    if(res == 1L) {
+    if(res == 1L)
+    {
         ERROR("seeking device");
         return -1;
     }
 
     res = fwrite(blk_buf, 1, btm_blk_len, args->dev);
-    if(res != btm_blk_len) {
+    if(res != btm_blk_len)
+    {
         ERROR("writing bitmap");
     }
 
@@ -29,7 +32,8 @@ dev_write_bitmap(fcfs_args_t *args) {
 }
 
 int
-dev_write_table(fcfs_args_t *args) {
+dev_write_table(fcfs_args_t *args)
+{
     DEBUG("");
     int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
     int btm_blk_len = args->fs_head->bmp_len * lblk_sz;
@@ -40,13 +44,15 @@ dev_write_table(fcfs_args_t *args) {
     memcpy(blk_buf, args->fs_table, sizeof(fcfs_table_t));
 
     int res = fseek(args->dev, lblk_sz + btm_blk_len, SEEK_SET);
-    if(res == 1L) {
+    if(res == 1L)
+    {
         ERROR("seeking device");
         return -1;
     }
 
     res = fwrite(blk_buf, 1, tbl_blk_len, args->dev);
-    if(res != tbl_blk_len) {
+    if(res != tbl_blk_len)
+    {
         ERROR("writing table");
         return -1;
     }

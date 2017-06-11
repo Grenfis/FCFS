@@ -13,8 +13,8 @@ typedef struct c_fid_item {
 static map_t    map_fid;
 
 static int
-fid_destroy(any_t a, any_t b) {
-    //free(((c_fid_item_t*)b)->path);
+fid_destroy(any_t a, any_t b)
+{
     free(b);
     return MAP_OK;
 }

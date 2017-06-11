@@ -1,12 +1,15 @@
 #include "common.h"
 
 int
-ops_write(const char *path, const char *data, size_t size, off_t offset, struct fuse_file_info *fi) {
+ops_write(const char *path, const char *data, size_t size, off_t offset, struct fuse_file_info *fi)
+{
     DEBUG("size %lu", size);
     DEBUG("offset %lu", offset);
-    if(fi != NULL) {
+    if(fi != NULL)
+    {
         DEBUG("fid %lu", fi->fh);
-        if(fi->fh == 0) {
+        if(fi->fh == 0)
+        {
             ops_open(path, fi);
         }
     }
@@ -25,7 +28,8 @@ ops_write(const char *path, const char *data, size_t size, off_t offset, struct 
     int seq_sz = 0;
     dev_blk_info_t *inf = dev_get_file_seq(args, fid, &seq_sz);
 
-    if(seq_sz < (blk_num + sz_cnt)) {
+    if(seq_sz < (blk_num + sz_cnt))
+    {
         seq_sz = dev_extd_blk_list(args, &inf, seq_sz, (blk_num + sz_cnt) - seq_sz, fid);
         if(seq_sz < 0)
             return -1;
@@ -33,26 +37,28 @@ ops_write(const char *path, const char *data, size_t size, off_t offset, struct 
 
     char tmp_buf[lblk_sz * sz_cnt];
     int res = 0;
-    for(size_t i = 0; i < sz_cnt; ++i) {
+    for(size_t i = 0; i < sz_cnt; ++i)
+    {
         res = dev_read_by_id(args, fid, blk_num + i, tmp_buf + lblk_sz * i, lblk_sz);
         if(res < 0)
             goto error;
     }
     memcpy(tmp_buf + blk_off, data, size);
-    for(size_t i = 0; i < sz_cnt; ++i) {
+    for(size_t i = 0; i < sz_cnt; ++i)
+    {
         res = dev_write_by_id(args, fid, blk_num + i, tmp_buf + lblk_sz * i, lblk_sz);
         if(res < 0)
             goto error;
     }
 
     int sz = dev_file_size(args, fid);
-    if(sz < (offset - sizeof(fcfs_file_header_t) + size)) {
+    if(sz < (offset - sizeof(fcfs_file_header_t) + size))
+    {
         sz += (offset - sizeof(fcfs_file_header_t) + size) - sz;
     }
+
     dev_set_file_size(args, fid, sz);
-
     return size;
-
 error:
     ERROR("smth wrong");
     return -1;

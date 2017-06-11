@@ -10,7 +10,8 @@
 #include <debug.h>
 
 char
-getch() {
+getch()
+{
     struct termios oldt, newt;
     char ch;
     tcgetattr(STDIN_FILENO, &oldt);
@@ -23,7 +24,8 @@ getch() {
 }
 
 char
-pathcmp(const char *a, const char *b) {
+pathcmp(const char *a, const char *b)
+{
     if (a == NULL || b == NULL)
         return 0;
     DEBUG("a & b is not NULL");
@@ -44,7 +46,8 @@ pathcmp(const char *a, const char *b) {
 }
 
 int
-get_parrent_path(const char *path) {
+get_parrent_path(const char *path)
+{
     int p_len = strlen(path);
     while(path[p_len] != '/')
         p_len--;

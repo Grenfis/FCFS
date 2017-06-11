@@ -1,11 +1,13 @@
 #include "common.h"
 
 int
-ops_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
+ops_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
+{
     DEBUG("path %s", path);
     DEBUG("size %lu", size);
     DEBUG("offset %lu", offset);
-    if(fi != NULL) {
+    if(fi != NULL)
+    {
         DEBUG("fid %lu", fi->fh);
     }
 
@@ -13,7 +15,8 @@ ops_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_fil
 
     int fid = fi->fh;
     int fsize = dev_file_size(args, fid);
-    if(fsize < (offset + size)) {
+    if(fsize < (offset + size))
+    {
         size += fsize - (offset + size); //always be < 0
         if(size <= 0)
             return size;
@@ -28,7 +31,8 @@ ops_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_fil
 
     char tmp[lblk_sz * sz_cnt];
     int res = 0;
-    for(size_t i = 0; i < sz_cnt; ++i) {
+    for(size_t i = 0; i < sz_cnt; ++i)
+    {
         res = dev_read_by_id(args, fid, blk_num, tmp + i * lblk_sz, lblk_sz);
         if(res < 0)
             goto error;
@@ -36,7 +40,6 @@ ops_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_fil
     }
 
     memcpy(buf, tmp + blk_off, size);
-
     return size;
 error:
     ERROR("smth wrong");

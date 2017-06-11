@@ -1,7 +1,8 @@
 #include "common.h"
 
 int
-ops_create( const char *path, mode_t mode, struct fuse_file_info *fi) {
+ops_create( const char *path, mode_t mode, struct fuse_file_info *fi)
+{
     DEBUG();
     fcfs_args_t *args = fcfs_get_args();
     int pfid = fcfs_get_pfid(path);
@@ -12,6 +13,5 @@ ops_create( const char *path, mode_t mode, struct fuse_file_info *fi) {
 
     dev_create_file(args, pfid, fid, path + p_len, 0100000 | mode);
     dev_init_file(args, fid);
-
     return 0;
 }

@@ -9,7 +9,8 @@
 #include <debug.h>
 
 fcfs_dir_entry_t *
-dev_read_dir(fcfs_args_t *args, int fid, int *ret_sz) {
+dev_read_dir(fcfs_args_t *args, int fid, int *ret_sz)
+{
     DEBUG();
     //define vars
     int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
@@ -21,7 +22,8 @@ dev_read_dir(fcfs_args_t *args, int fid, int *ret_sz) {
     free(dev_get_file_seq(args, fid, &seq_sz));
     dir_buf = calloc(1, lblk_sz * seq_sz);
     //read blocks
-    for(size_t i = 0; i < seq_sz; ++i) {
+    for(size_t i = 0; i < seq_sz; ++i)
+    {
         dev_read_by_id(args, fid, i, dir_buf + dir_buf_len, lblk_sz);
         dir_buf_len += lblk_sz;
     }
@@ -42,7 +44,8 @@ dev_read_dir(fcfs_args_t *args, int fid, int *ret_sz) {
 }
 
 int
-dev_write_dir(fcfs_args_t *args, int fid, fcfs_dir_entry_t *ent, int len) {
+dev_write_dir(fcfs_args_t *args, int fid, fcfs_dir_entry_t *ent, int len)
+{
     DEBUG();
     //define vars
     int lblk_sz = args->fs_head->blk_sz * args->fs_head->phy_blk_sz;
@@ -60,13 +63,17 @@ dev_write_dir(fcfs_args_t *args, int fid, fcfs_dir_entry_t *ent, int len) {
     int seq_sz = 0;
     dev_blk_info_t *inf = dev_get_file_seq(args, fid, &seq_sz);
 
-    if(seq_sz < dir_blk_cnt){
+    if(seq_sz < dir_blk_cnt)
+    {
         seq_sz = dev_extd_blk_list(args, &inf, seq_sz, dir_blk_cnt - seq_sz, fid);
-    }else if(seq_sz > dir_blk_cnt) {
+    }
+    else if(seq_sz > dir_blk_cnt)
+    {
         DEBUG("free blocks!");
     }
 
-    for(size_t i = 0; i < seq_sz; ++i) {
+    for(size_t i = 0; i < seq_sz; ++i)
+    {
         dev_write_by_id(args, fid, i, dir_buf + dir_buf_off, lblk_sz);
         dir_buf_off += lblk_sz;
     }
@@ -77,13 +84,16 @@ dev_write_dir(fcfs_args_t *args, int fid, fcfs_dir_entry_t *ent, int len) {
 }
 
 int
-dev_rm_from_dir(fcfs_args_t *args, int fid, int del_id) {
+dev_rm_from_dir(fcfs_args_t *args, int fid, int del_id)
+{
     int dirs_len = 0;
     fcfs_dir_entry_t *dirs = dev_read_dir(args, fid, &dirs_len);
 
     int index = -1;
-    for(size_t i = 0; i < dirs_len; ++i) {
-        if(dirs[i].fid == del_id) {
+    for(size_t i = 0; i < dirs_len; ++i)
+    {
+        if(dirs[i].fid == del_id)
+        {
             memcpy(&dirs[i], &dirs[dirs_len - 1], sizeof(fcfs_dir_entry_t));
             index = i;
             break;
