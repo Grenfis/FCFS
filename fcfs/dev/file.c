@@ -101,15 +101,17 @@ dev_get_file_seq(fcfs_args_t *args, int fid, int *size) {
     DEBUG();
     //fcfs_table_entry_t *tentry = &args->fs_table->entrs[fid];
     int clust_cnt = dev_tbl_clrs_cnt(args, fid);
-    int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
-    int entr_cnt = (lblk_sz - sizeof(unsigned int)) / (double)sizeof(unsigned int);
+    //int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
+    //int entr_cnt = (lblk_sz - sizeof(unsigned int)) / (double)sizeof(unsigned int);
 
-    const int tmp_len = ((FCFS_CLUSTER_PER_FILE - 3) * (FCFS_BLOKS_PER_CLUSTER - 1)) +
+    /*const int tmp_len = ((FCFS_CLUSTER_PER_FILE - 3) * (FCFS_BLOKS_PER_CLUSTER - 1)) +
         ((FCFS_BLOKS_PER_CLUSTER - 1) * entr_cnt) +
         ((FCFS_BLOKS_PER_CLUSTER - 1) * entr_cnt * entr_cnt) +
         ((FCFS_BLOKS_PER_CLUSTER - 1) * entr_cnt * entr_cnt * entr_cnt);
 
-    dev_blk_info_t *tmp = calloc(1, tmp_len * sizeof(dev_blk_info_t));
+    dev_blk_info_t *tmp = calloc(1, tmp_len * sizeof(dev_blk_info_t));*/
+    dev_blk_info_t *first, *last;
+    first = last = calloc(1, sizeof(dev_blk_info_t));
     int k = 0;
     for(size_t i = 0; i < clust_cnt; ++i) {
         //int cid = tentry->clrs[i];
@@ -121,9 +123,14 @@ dev_get_file_seq(fcfs_args_t *args, int fid, int *size) {
         int b_len = 0;
         int *blist = dev_get_blocks(bl, fid, &b_len);
         for(size_t j = 0; j < b_len; ++j) {
-            tmp[k].cid = cid;
+            /*tmp[k].cid = cid;
             tmp[k].bid = blist[j];
-            tmp[k].num = bl->entrs[blist[j] - 1].num;
+            tmp[k].num = bl->entrs[blist[j] - 1].num;*/
+            last->cid = cid;
+            last->bid = blist[j];
+            last->num = bl->entrs[blist[j] - 1].num;
+            last->next = calloc(1, sizeof(dev_blk_info_t));
+            last = last->next;
             k++;
         }
 
@@ -138,29 +145,42 @@ dev_get_file_seq(fcfs_args_t *args, int fid, int *size) {
     dev_blk_info_t fi;
     while(flag) {
         flag = 0;
+        dev_blk_info_t *cur, *nxt;
+        cur = first;
         for(size_t i = 1; i < k; ++i) {
-            if(tmp[i - 1].num > tmp[i].num) {
+            nxt = cur->next;
+            if(cur->num > nxt->num) {
                 flag = 1;
-                memcpy(&fi, &tmp[i - 1], sizeof(dev_blk_info_t));
-                memcpy(&tmp[i - 1], &tmp[i], sizeof(dev_blk_info_t));
-                memcpy(&tmp[i], &fi, sizeof(dev_blk_info_t));
+                //memcpy(&fi, &tmp[i - 1], sizeof(dev_blk_info_t));
+                //memcpy(&tmp[i - 1], &tmp[i], sizeof(dev_blk_info_t));
+                //memcpy(&tmp[i], &fi, sizeof(dev_blk_info_t));
+                fi.cid = cur->cid;
+                fi.bid = cur->bid;
+                fi.num = cur->num;
+                cur->cid = nxt->cid;
+                cur->bid = nxt->bid;
+                cur->num = nxt->num;
+                nxt->cid = fi.cid;
+                nxt->bid = fi.bid;
+                nxt->num = fi.num;
             }
         }
     }
 
-    dev_blk_info_t *inf = calloc(1, sizeof(dev_blk_info_t) * k);
-    memcpy(inf, tmp, sizeof(dev_blk_info_t) * k);
+    //dev_blk_info_t *inf = calloc(1, sizeof(dev_blk_info_t) * k);
+    //memcpy(inf, tmp, sizeof(dev_blk_info_t) * k);
 
     *size = k;
-    free(tmp);
-    return inf;
+    //free(tmp);
+    return first;
 }
 
 int
 dev_read_by_id(fcfs_args_t *args, int fid, int id, char *buf, int lblk_sz) {
     DEBUG("fid = id - %d = %d", fid, id);
     int seq_sz = 0;
-    dev_blk_info_t *inf = dev_get_file_seq(args, fid, &seq_sz);
+    dev_blk_info_t *list = dev_get_file_seq(args, fid, &seq_sz);
+    dev_blk_info_t *inf = list;
 
     if(seq_sz <= 0)
         return -1;
@@ -168,15 +188,16 @@ dev_read_by_id(fcfs_args_t *args, int fid, int id, char *buf, int lblk_sz) {
     int cid = -1;
     int bid = -1;
     for(size_t i = 0; i < seq_sz; ++i) {
-        if(inf[i].num == id) {
-            cid = inf[i].cid;
-            bid = inf[i].bid;
+        if(inf->num == id) {
+            cid = inf->cid;
+            bid = inf->bid;
             break;
         }
+        inf = inf->next;
     }
     DEBUG("cid = bid - %d = %d", cid, bid);
     if(cid < 0 || bid < 0) {
-        free(inf);
+        dev_destr_blk_info(list);
         return -1;
     }
 
@@ -189,7 +210,8 @@ dev_read_by_id(fcfs_args_t *args, int fid, int id, char *buf, int lblk_sz) {
 int
 dev_write_by_id(fcfs_args_t *args, int fid, int id, const char *buf, int lblk_sz) {
     int seq_sz = 0;
-    dev_blk_info_t *inf = dev_get_file_seq(args, fid, &seq_sz);
+    dev_blk_info_t *list = dev_get_file_seq(args, fid, &seq_sz);
+    dev_blk_info_t *inf = list;
 
     if(seq_sz <= 0)
         return -1;
@@ -197,15 +219,16 @@ dev_write_by_id(fcfs_args_t *args, int fid, int id, const char *buf, int lblk_sz
     int cid = -1;
     int bid = -1;
     for(size_t i = 0; i < seq_sz; ++i) {
-        if(inf[i].num == id) {
-            cid = inf[i].cid;
-            bid = inf[i].bid;
+        if(inf->num == id) {
+            cid = inf->cid;
+            bid = inf->bid;
             break;
         }
+        inf = inf->next;
     }
 
     if(cid < 0 || bid < 0) {
-        free(inf);
+        dev_destr_blk_info(list);
         return -1;
     }
 

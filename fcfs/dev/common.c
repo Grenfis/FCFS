@@ -19,6 +19,15 @@ static unsigned char mask[] = {
 };
 static int mask_off[] = {7,6,5,4,3,2,1,0};
 
+void
+dev_destr_blk_info(dev_blk_info_t *i) {
+    while(i != NULL) {
+        dev_blk_info_t *t = i;
+        i = i->next;
+        free(t);
+    }
+}
+
 int
 dev_full_free_cluster(fcfs_args_t *args) {
     DEBUG();
@@ -189,20 +198,25 @@ dev_set_file_size(fcfs_args_t *args, int fid, int size) {
 
 dev_blk_info_t *
 dev_free_blocks(fcfs_args_t *args, int count, int *size) {
-    dev_blk_info_t *res = calloc(1, sizeof(dev_blk_info_t) * count);
+    //dev_blk_info_t *res = calloc(1, sizeof(dev_blk_info_t) * count);
 
     size_t i = 0;
     int old_cid = 0;
+    dev_blk_info_t *first, *last;
+    first = last = calloc(1, sizeof(dev_blk_info_t));
+
     for(; i < count;) {
         int cid = dev_free_cluster_from(args, old_cid);
         fcfs_block_list_t *bl = dev_read_ctable(args, cid);
         int b_len = 0;
         int *blist = dev_get_blocks(bl, 0, &b_len);
         for(size_t j = 0; j < b_len && i < count; ++j) {
-            res[i].cid = cid;
+            last->cid = cid;
             old_cid = cid;
-            res[i].bid = blist[j];
-            res[i].num = 0;
+            last->bid = blist[j];
+            last->num = 0;
+            last->next = calloc(1, sizeof(dev_blk_info_t));
+            last = last->next;
             i++;
         }
         free(blist);
@@ -210,7 +224,7 @@ dev_free_blocks(fcfs_args_t *args, int count, int *size) {
     }
 
     *size = i;
-    return res;
+    return first;
 }
 
 int
@@ -251,7 +265,7 @@ dev_file_mem_clrs(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, i
         char f = 0;
         for(size_t j = 0; j < clust_cnt; ++j) {
             int t = dev_tbl_clrs_get(args, fid, j);
-            if(t == inf[i].cid) {
+            if(t == inf->cid) {
                 f = 1;
                 break;
             }else if(t < 0) {
@@ -259,9 +273,10 @@ dev_file_mem_clrs(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, i
             }
         }
         if(f != 1) {
-            dev_tbl_clrs_add(args, fid, inf[i].cid);
+            dev_tbl_clrs_add(args, fid, inf->cid);
             clust_cnt++;
         }
+        inf = inf->next;
     }
 }
 
@@ -272,21 +287,23 @@ dev_file_reserve(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, in
         return -1;
     }
     int clust_cnt = dev_tbl_clrs_cnt(args, fid);
+    dev_blk_info_t *first = inf;
     if(clust_cnt < 0)
         return -1;
     for(size_t i = 0; i < seq_sz; ++i) {
         last_num++;
-        fcfs_block_list_t *bl = dev_read_ctable(args, inf[i].cid);
-        bl->entrs[inf[i].bid - 1].fid = fid;
-        bl->entrs[inf[i].bid - 1].num = last_num;
-        dev_write_block(args, inf[i].cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
-        inf[i].num = last_num;
+        fcfs_block_list_t *bl = dev_read_ctable(args, inf->cid);
+        bl->entrs[inf->bid - 1].fid = fid;
+        bl->entrs[inf->bid - 1].num = last_num;
+        dev_write_block(args, inf->cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
+        inf->num = last_num;
 
-        if(!dev_upd_bitmap(args, bl, inf[i].cid))
+        if(!dev_upd_bitmap(args, bl, inf->cid))
             dev_write_bitmap(args);
         free(bl);
+        inf = inf->next;
     }
-    dev_file_mem_clrs(args, fid, inf, seq_sz, clust_cnt);
+    dev_file_mem_clrs(args, fid, first, seq_sz, clust_cnt);
     dev_write_table(args);
     return 0;
 }
@@ -295,15 +312,19 @@ int
 dev_extd_blk_list(fcfs_args_t *args, dev_blk_info_t **inf, int seq_sz,int count, int fid) {
     int new_seq_sz = 0;
     dev_blk_info_t *blks = dev_free_blocks(args, count, &new_seq_sz);
-    int res = dev_file_reserve(args, fid, blks, new_seq_sz, (*inf)[seq_sz - 1].num);
+    int res = dev_file_reserve(args, fid, blks, new_seq_sz, seq_sz-1);
     if(res < 0)
         return -1;
-    dev_blk_info_t *tmp = calloc(1, (new_seq_sz + seq_sz) * sizeof(dev_blk_info_t));
+    /*dev_blk_info_t *tmp = calloc(1, (new_seq_sz + seq_sz) * sizeof(dev_blk_info_t));
     memcpy(tmp, *inf, sizeof(dev_blk_info_t) * seq_sz);
     memcpy(tmp + seq_sz, blks, sizeof(dev_blk_info_t) * new_seq_sz);
     free(*inf);
     free(blks);
-    *inf = tmp;
+    *inf = tmp;*/
+    dev_blk_info_t *last = *inf;
+    while(last->next != NULL)
+        last = last->next;
+    last->next = blks;
     return seq_sz += new_seq_sz;
 }
 

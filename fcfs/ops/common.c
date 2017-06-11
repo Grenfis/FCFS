@@ -8,7 +8,7 @@ fcfs_get_args(void) {
 int
 fcfs_get_fid(const char *path) {
     struct stat st;
-    ops_getattr(path, &st, NULL);
+    _ops_getattr(path, &st, NULL, 0);
     return st.st_dev;
 }
 

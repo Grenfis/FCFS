@@ -10,7 +10,11 @@ typedef struct dev_blk_info {
     unsigned cid;
     unsigned char bid;
     unsigned num;
+    struct dev_blk_info *next;
 } dev_blk_info_t;
+
+void
+dev_destr_blk_info(dev_blk_info_t *i);
 
 
 int

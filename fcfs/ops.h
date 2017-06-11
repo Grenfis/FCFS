@@ -12,6 +12,10 @@ ops_destroy(void *args);
 
 int
 ops_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi);
+//like getattr, but better
+//flag - if 1 then need read file size
+int
+_ops_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi, unsigned char flag);
 
 int
 ops_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi, enum fuse_readdir_flags flags);
