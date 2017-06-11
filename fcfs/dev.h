@@ -16,13 +16,15 @@ typedef struct dev_blk_info {
 void
 dev_destr_blk_info(dev_blk_info_t *i);
 
-
 int
 dev_mount(fcfs_args_t *args);
 
 //id - cluster id
 fcfs_block_list_t *
 dev_read_ctable(fcfs_args_t *args, int id);
+
+int
+dev_write_ctable(fcfs_args_t *args, int id, fcfs_block_list_t *bl);
 
 //cid - cluster id
 //bid - id of block of file in cluster

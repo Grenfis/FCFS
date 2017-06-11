@@ -1,4 +1,5 @@
 #include "common.h"
+#include "cache.h"
 
 void *
 ops_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
@@ -12,6 +13,8 @@ ops_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
         exit(-1);
     }
 
+    cache_init();
+    //cache_fid_add("/", 0);
     return (void*)args;
 }
 
@@ -19,6 +22,7 @@ void
 ops_destroy(void *a) {
     DEBUG("");
     fcfs_args_t *args = (fcfs_args_t*)a;
+    cache_destroy();
     free(args->p_dev);
     DEBUG("deleted p_dev");
     free(args->passwd);

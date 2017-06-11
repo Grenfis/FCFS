@@ -1,8 +1,18 @@
 #include "common.h"
+#include "cache.h"
 
 int
 _ops_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi, unsigned char flag) {
     DEBUG("path = %s", path);
+
+    if(!flag) {
+        struct stat *st = cache_fid_get(path);
+        if(st != NULL) {
+            //stbufm->st_dev = cfid;
+            memcpy(stbufm, st, sizeof(struct stat));
+            return 0;
+        }
+    }
     fcfs_args_t *args = fcfs_get_args();
     //set default data of file
     memset(stbufm, 0, sizeof(struct stat));
@@ -46,6 +56,7 @@ _ops_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi, u
             stbufm->st_dev = dirs[i].fid;
 
             free(dirs);
+            cache_fid_add(path, stbufm);
             return 0;
         }
     }
