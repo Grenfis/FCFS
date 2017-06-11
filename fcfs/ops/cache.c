@@ -1,81 +1,62 @@
 #include "cache.h"
 #include "common.h"
+#include "../hashmap/hashmap.h"
 
-static cache_fid_list_t cache_fid;
+#include <time.h>
+
+typedef struct c_fid_item {
+    struct stat st;
+    //char        *path;
+    time_t      time;
+} c_fid_item_t;
+
+static map_t    map_fid;
+
+static int
+fid_destroy(any_t a, any_t b) {
+    //free(((c_fid_item_t*)b)->path);
+    free(b);
+    return MAP_OK;
+}
 
 static void
 cache_fid_init()
 {
-    cache_fid.cnt = 0;
-    cache_fid_item_t *tmp = calloc(1, sizeof(cache_fid_item_t));
-    cache_fid.first = tmp;
-    for(size_t i = 0; i < CACHE_FID_MAX - 1; ++i) {
-        tmp->path   = "";
-        tmp->next   = calloc(1, sizeof(cache_fid_item_t));
-        tmp         = tmp->next;
-    }
+    map_fid = hashmap_new();
 }
 
 static void
 cache_fid_destroy()
 {
-    cache_fid_item_t *tmp = cache_fid.first;
-    for(size_t i = 0; i < CACHE_FID_MAX; ++i) {
-        if(tmp != NULL) {
-            free(tmp->path);
-            cache_fid_item_t *t = tmp->next;
-            free(tmp);
-            tmp = t;
-        }else{
-            break;
-        }
-    }
+    hashmap_iterate(map_fid, fid_destroy, NULL);
+    hashmap_free(map_fid);
 }
 
 void
 cache_fid_add(const char *path, struct stat *st)
 {
-    cache_fid_item_t *tmp = cache_fid.first;
-    unsigned char flag = 0;
-    for(size_t i = 0; i < cache_fid.cnt; ++i) {
-        if(tmp == NULL)
-            return;
-        if(tmp->path == NULL)
-            break;
-        if(strcmp(path, tmp->path) == 0) {
-            flag = 1;
-            break;
-        }
-        tmp = tmp->next;
+    c_fid_item_t *it = calloc(1, sizeof(c_fid_item_t));
+    it->time = time(NULL);
+    //it->path = calloc(1, strlen(path));
+    //strcpy(it->path, path);
+    memcpy(&it->st, st, sizeof(struct stat));
+    int error = hashmap_put(map_fid, path, it);
+    if(error == MAP_FULL || error == MAP_OMEM)
+    {
+
     }
-    if(!flag) {
-        if(strcmp(tmp->path, "") == 0) {
-            tmp->path = calloc(1, strlen(path));
-        }
-        strcpy(tmp->path, path);
-        //tmp->fid = fid;
-        memcpy(&tmp->stat, st, sizeof(struct stat));
-        cache_fid.cnt++;
-    }
-    if(cache_fid.cnt == CACHE_FID_MAX)
-        cache_fid.cnt = 0;
 }
 
 struct stat *
 cache_fid_get(const char *path)
 {
-    cache_fid_item_t *tmp = cache_fid.first;
-    while(tmp != NULL) {
-        if(tmp->path == NULL) {
-            tmp = tmp->next;
-            continue;
-        }
-        if(strcmp(path, tmp->path) == 0){
-            return &tmp->stat;
-        }
-        tmp = tmp->next;
-    }
-    return NULL;
+    struct stat *st= calloc(1, sizeof(struct stat));
+    c_fid_item_t *it;
+    int error = hashmap_get(map_fid, path,(void**)&it);
+    if(error != MAP_OK)
+        return NULL;
+    memcpy(st, &it->st, sizeof(struct stat));
+    return st;
 }
 
 void

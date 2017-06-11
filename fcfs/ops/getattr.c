@@ -10,6 +10,7 @@ _ops_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi, u
         if(st != NULL) {
             //stbufm->st_dev = cfid;
             memcpy(stbufm, st, sizeof(struct stat));
+            free(st);
             return 0;
         }
     }

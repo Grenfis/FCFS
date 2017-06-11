@@ -15,11 +15,12 @@ include_directories("/home/snippy/diploma/include/")
 link_directories("/home/snippy/diploma/lib/lib/")
 
 set(DEV dev/common.c dev/dir.c dev/file.c dev/mount.c dev/read.c dev/write_structs.c
-    dev/write.c dev/table.c)
+    dev/write.c dev/table.c dev/ctable.c)
 set(OPS ops/cache.c ops/getattr.c ops/main.c ops/mkdir.c ops/open.c ops/read.c
     ops/readdir.c ops/rmdir.c ops/create.c ops/unlink.c ops/chown.c ops/truncate.c
     ops/utimens.c ops/write.c ops/flush.c)
-add_executable(fcfs fcfs.c utils.c ${OPS} ${DEV})
+set(HASHMAP hashmap/hashmap.c)
+add_executable(fcfs fcfs.c utils.c ${OPS} ${DEV} ${HASHMAP})
 
 target_link_libraries(fcfs fcfs_lib)
 target_link_libraries(fcfs fuse3)

@@ -1,0 +1,3 @@
+[submodule "fcfs/hashmap"]
+	path = fcfs/hashmap
+	url = https://github.com/petewarden/c_hashmap.git

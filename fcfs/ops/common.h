@@ -37,8 +37,9 @@ fcfs_get_pfid(const char *path) {
     int p_len = get_parrent_path(path);
     p_len = p_len == 0 ? 1: p_len;
     //allocate tmp string
-    char *np = malloc(p_len);
+    char *np = malloc(p_len + 1);
     memcpy(np, path, p_len);
+    np[p_len] = '\0';
     //get file id by path
     int res = fcfs_get_fid(np);
 
