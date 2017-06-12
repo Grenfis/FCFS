@@ -22,7 +22,8 @@ cache_fid_init()
 void
 cache_fid_destroy()
 {
-    hashmap_iterate(map_fid, fid_destroy, NULL);
+    //hashmap_iterate(map_fid, fid_destroy, NULL);
+    hashmap_clear(map_fid, fid_destroy, NULL);
     hashmap_free(map_fid);
 }
 
