@@ -1,4 +1,5 @@
 #include "../dev.h"
+#include "../cache.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -105,6 +106,14 @@ dev_blk_info_t *
 dev_get_file_seq(fcfs_args_t *args, int fid, int *size)
 {
     DEBUG();
+    //check cache hint
+    int t_len = 0;
+    dev_blk_info_t *t = cache_seq_get(fid, &t_len);
+    if(t != NULL) {
+        *size = t_len;
+        return t;
+    }
+
     int clust_cnt = dev_tbl_clrs_cnt(args, fid);
     dev_blk_info_t *first, *last, *pre_last;
     first = pre_last = last = calloc(1, sizeof(dev_blk_info_t));
@@ -138,7 +147,7 @@ dev_get_file_seq(fcfs_args_t *args, int fid, int *size)
 
     free(last);
     pre_last->next = NULL;
-    
+
     unsigned char flag = 1;
     dev_blk_info_t fi;
     while(flag)
@@ -164,6 +173,8 @@ dev_get_file_seq(fcfs_args_t *args, int fid, int *size)
             }
         }
     }
+    //add to cache
+    //cache_seq_add(fid, first);
 
     *size = k;
     return first;

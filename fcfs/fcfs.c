@@ -38,6 +38,9 @@ static struct fuse_operations fcfs_ops = {
     .chown      = ops_chown,
     .truncate   = ops_truncate,
     .flush      = ops_flush,
+    .opendir    = ops_opendir,
+    .releasedir = ops_releasedir,
+    .release    = ops_release,
 }; //file system operations
 
 static struct fuse_opt fcfs_opt[] = {

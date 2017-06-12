@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static map_t    map_fid;
+static map_t map_fid;
 
 static int
 fid_destroy(any_t a, any_t b)

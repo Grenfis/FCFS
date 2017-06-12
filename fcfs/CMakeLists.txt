@@ -24,7 +24,8 @@ set(DEV
 set(OPS
     ops/getattr.c ops/main.c ops/mkdir.c ops/open.c ops/read.c
     ops/readdir.c ops/rmdir.c ops/create.c ops/unlink.c ops/chown.c
-    ops/truncate.c ops/utimens.c ops/write.c ops/flush.c)
+    ops/truncate.c ops/utimens.c ops/write.c ops/flush.c ops/opendir.c
+    ops/releasedir.c ops/release.c)
 
 set(HASHMAP
     hashmap/hashmap.c)

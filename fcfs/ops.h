@@ -53,4 +53,13 @@ ops_utimens(const char *path, const struct timespec tv[2], struct fuse_file_info
 int
 ops_flush(const char *path, struct fuse_file_info *fi);
 
+int
+ops_opendir(const char *path, struct fuse_file_info *fi);
+
+int
+ops_releasedir(const char *path, struct fuse_file_info *fi);
+
+int
+ops_release(const char *path, struct fuse_file_info *fi);
+
 #endif
