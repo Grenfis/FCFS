@@ -3,15 +3,17 @@
 
 #include <sys/stat.h>
 
-enum {
-    CACHE_FID_MAX = 256,
-};
-
 void
 cache_init();
 
 void
 cache_destroy();
+
+void
+cache_fid_init();
+
+void
+cache_fid_destroy();
 
 void
 cache_fid_add(const char *path, struct stat *st);

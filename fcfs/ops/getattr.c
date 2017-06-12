@@ -1,5 +1,5 @@
 #include "common.h"
-#include "cache.h"
+#include "../cache.h"
 
 int
 _ops_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi, unsigned char flag)

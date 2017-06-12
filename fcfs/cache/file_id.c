@@ -1,14 +1,8 @@
-#include "cache.h"
-#include "common.h"
+#include "../cache.h"
 #include "../hashmap/hashmap.h"
 
-#include <time.h>
-
-/*typedef struct c_fid_item {
-    struct stat st;
-    //char        *path;
-    time_t      time;
-} c_fid_item_t;*/
+#include <stdlib.h>
+#include <string.h>
 
 static map_t    map_fid;
 
@@ -19,13 +13,13 @@ fid_destroy(any_t a, any_t b)
     return MAP_OK;
 }
 
-static void
+void
 cache_fid_init()
 {
     map_fid = hashmap_new();
 }
 
-static void
+void
 cache_fid_destroy()
 {
     hashmap_iterate(map_fid, fid_destroy, NULL);
@@ -54,16 +48,4 @@ cache_fid_get(const char *path)
         return NULL;
     memcpy(st, tmp, sizeof(struct stat));
     return st;
-}
-
-void
-cache_init()
-{
-    cache_fid_init();
-}
-
-void
-cache_destroy()
-{
-    cache_fid_destroy();
 }
