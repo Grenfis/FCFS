@@ -19,7 +19,8 @@ read_head(FILE *dev, int l_blk_sz)
         exit(-1);
     }
     memcpy(head, head_buf, sizeof(fcfs_head_t));
-    free(head_buf);
+    if(head_buf != NULL)
+        free(head_buf);
     return head;
 }
 
@@ -50,7 +51,8 @@ read_table(FILE *dev, int bytes)
         exit(-1);
     }
     memcpy(table, table_buf, sizeof(fcfs_table_t));
-    free(table_buf);
+    if(table_buf != NULL)
+        free(table_buf);
     return table;
 }
 
@@ -68,7 +70,8 @@ dev_mount(fcfs_args_t *args)
     }
 
     int l_blk_sz = d_info->sec_sz * FCFS_BLOCK_SIZE;
-    free(d_info);
+    if(d_info != NULL)
+        free(d_info);
 
     res = fseek(args->dev, 0, SEEK_SET);
     if(res == 1L)

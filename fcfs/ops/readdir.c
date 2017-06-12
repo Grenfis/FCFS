@@ -32,6 +32,7 @@ ops_readdir(   const char *path,
             filler(buf, dirs[i].name, NULL, 0, 0);
     }
 
-    free(dirs);
+    if(dirs != NULL)
+        free(dirs);
     return 0;
 }

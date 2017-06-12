@@ -9,7 +9,8 @@ static map_t map_fid;
 static int
 fid_destroy(any_t a, any_t b)
 {
-    free(b);
+    if(b != NULL)
+        free(b);
     return MAP_OK;
 }
 

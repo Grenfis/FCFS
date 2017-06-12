@@ -41,7 +41,8 @@ pathcmp(const char *a, const char *b)
         return 0;
 
     DEBUG("ok %s %s", a, tmp);
-    free(tmp);
+    if(tmp != NULL)
+        free(tmp);
     return 1;
 }
 

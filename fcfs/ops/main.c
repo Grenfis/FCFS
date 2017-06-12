@@ -25,15 +25,20 @@ ops_destroy(void *a)
     DEBUG("");
     fcfs_args_t *args = (fcfs_args_t*)a;
     cache_destroy();
-    free(args->p_dev);
+    if(args->p_dev != NULL)
+        free(args->p_dev);
     DEBUG("deleted p_dev");
-    free(args->passwd);
+    if(args->passwd != NULL)
+        free(args->passwd);
     DEBUG("deleted passwd");
-    free(args->fs_head);
+    if(args->fs_head != NULL)
+        free(args->fs_head);
     DEBUG("deleted fs_head");
-    free(args->fs_bitmap);
+    if(args->fs_bitmap != NULL)
+        free(args->fs_bitmap);
     DEBUG("deleted fs_bitmap");
-    free(args->fs_table);
+    if(args->fs_table != NULL)
+        free(args->fs_table);
     DEBUG("deleted fs_table");
     fclose(args->dev);
     DEBUG("deleted dev");

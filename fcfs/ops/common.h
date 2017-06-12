@@ -43,7 +43,8 @@ fcfs_get_pfid(const char *path) {
     //get file id by path
     int res = fcfs_get_fid(np);
 
-    free(np);
+    if(np != NULL)
+        free(np);
     return res;
 }
 

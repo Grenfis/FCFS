@@ -43,8 +43,10 @@ dev_full_free_cluster(fcfs_args_t *args)
         fcfs_block_list_t *bl = dev_read_ctable(args, cid);
         b_len = 0;
         int *blist = dev_get_blocks(bl, 0, &b_len);
-        free(blist);
-        free(bl);
+        if(blist != NULL)
+            free(blist);
+        if(bl != NULL)
+            free(bl);
         start = cid;
     }
     while(b_len != (FCFS_BLOKS_PER_CLUSTER - 1));
@@ -164,8 +166,10 @@ dev_file_alloc(fcfs_args_t *args, int fid)
     if(blk_cnt == 0)
     {
         ERROR("cluster is not free");
-        free(blks);
-        free(bl);
+        if(blks != NULL)
+            free(blks);
+        if(bl != NULL)
+            free(bl);
         return -1;
     }
     bl->entrs[blks[0] - 1].fid = fid;
@@ -177,8 +181,10 @@ dev_file_alloc(fcfs_args_t *args, int fid)
         dev_write_bitmap(args);
     dev_write_table(args);
 
-    free(bl);
-    free(blks);
+    if(bl != NULL)
+        free(bl);
+    if(blks != NULL)
+        free(blks);
     return 0;
 }
 
@@ -248,8 +254,10 @@ dev_free_blocks(fcfs_args_t *args, int count, int *size)
             last = last->next;
             i++;
         }
-        free(blist);
-        free(bl);
+        if(blist != NULL)
+            free(blist);
+        if(bl != NULL)
+            free(bl);
     }
     //free(last);
     *size = i;
@@ -283,8 +291,10 @@ dev_del_block(fcfs_args_t *args, int fid, int cid, int bid)
         dev_write_table(args);
     }
 
-    free(blist);
-    free(bl);
+    if(blist != NULL)
+        free(blist);
+    if(bl != NULL)
+        free(bl);
     return 0;
 }
 
@@ -336,7 +346,8 @@ dev_file_reserve(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, in
 
         if(!dev_upd_bitmap(args, bl, inf->cid))
             dev_write_bitmap(args);
-        free(bl);
+        if(bl != NULL)
+            free(bl);
         inf = inf->next;
     }
     dev_file_mem_clrs(args, fid, first, seq_sz, clust_cnt);
@@ -375,6 +386,7 @@ dev_clust_claim(fcfs_args_t *args, int cid)
     dev_write_ctable(args, cid, bl);
     if(!dev_upd_bitmap(args, bl, cid))
         dev_write_bitmap(args);
-    free(bl);
+    if(bl != NULL)
+        free(bl);
     return 0;
 }

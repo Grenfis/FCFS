@@ -144,7 +144,8 @@ main(int argc, char *argv[])
         //copy password into struct
         fc_args.passwd = calloc(1, c_buf_pos);
         memcpy(fc_args.passwd, buf, c_buf_pos);
-        free(buf);
+        if(buf != NULL)
+            free(buf);
     }
     for(size_t i = 0; i < fu_args.argc; ++i)
     {

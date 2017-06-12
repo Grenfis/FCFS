@@ -27,7 +27,8 @@ dev_write_bitmap(fcfs_args_t *args)
         ERROR("writing bitmap");
     }
 
-    free(blk_buf);
+    if(blk_buf != NULL)
+        free(blk_buf);
     return 0;
 }
 
@@ -57,6 +58,7 @@ dev_write_table(fcfs_args_t *args)
         return -1;
     }
 
-    free(blk_buf);
+    if(blk_buf != NULL)
+        free(blk_buf);
     return 0;
 }

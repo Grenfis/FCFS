@@ -39,7 +39,8 @@ dev_read_dir(fcfs_args_t *args, int fid, int *ret_sz)
     dir_list = calloc(1, dir_entr_len);
     memcpy(dir_list, dir_buf + sizeof(fcfs_file_header_t), dir_entr_len);
 
-    free(dir_buf);
+    if(dir_buf != NULL)
+        free(dir_buf);
     return dir_list;
 }
 
@@ -78,7 +79,8 @@ dev_write_dir(fcfs_args_t *args, int fid, fcfs_dir_entry_t *ent, int len)
         dir_buf_off += lblk_sz;
     }
 
-    free(dir_buf);
+    if(dir_buf != NULL)
+        free(dir_buf);
     dev_destr_blk_info(inf);
     return 0;
 }
@@ -108,6 +110,7 @@ dev_rm_from_dir(fcfs_args_t *args, int fid, int del_id)
 
     dev_write_dir(args, fid, tmp, dirs_len - 1);
 
-    free(dirs);
+    if(dirs != NULL)
+        free(dirs);
     return 0;
 }

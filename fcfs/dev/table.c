@@ -53,7 +53,8 @@ dev_tbl_load_sec(fcfs_args_t *args, int cid)
     {
         char *b = dev_read_block(args, cid, i);
         memcpy(buf + (i - 1) * lblk_sz, b, lblk_sz);
-        free(b);
+        if(b != NULL)
+            free(b);
     }
     unsigned int off = sizeof(unsigned int);
     memcpy(&count, buf, off);

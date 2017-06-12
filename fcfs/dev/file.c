@@ -65,7 +65,8 @@ dev_create_file(fcfs_args_t *args, int pfid, int fid, const char *name, mode_t m
     dirs_len += 1;
     tmp = calloc(1, sizeof(fcfs_dir_entry_t) * dirs_len);
     memcpy(tmp, dirs, sizeof(fcfs_dir_entry_t) * (dirs_len - 1));
-    free(dirs);
+    if(dirs != NULL)
+        free(dirs);
     new_pos = dirs_len - 1;
 
     dev_file_alloc(args, fid);
@@ -97,8 +98,10 @@ dev_init_file(fcfs_args_t *args, int fid)
 
     int res = dev_write_block(args, cid, blks[0], (char*)&fh, sizeof(fcfs_file_header_t));
 
-    free(bl);
-    free(blks);
+    if(bl != NULL)
+        free(bl);
+    if(blks != NULL)
+        free(blks);
     return res;
 }
 
@@ -138,14 +141,17 @@ dev_get_file_seq(fcfs_args_t *args, int fid, int *size)
             k++;
         }
 
-        free(bl);
-        free(blist);
+        if(bl != NULL)
+            free(bl);
+        if(blist != NULL)
+            free(blist);
 
         if(fid == 0)
             break;
     }
 
-    free(last);
+    if(last != NULL)
+        free(last);
     pre_last->next = NULL;
 
     unsigned char flag = 1;

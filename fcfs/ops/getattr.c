@@ -12,7 +12,8 @@ _ops_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi, u
         if(st != NULL)
         {
             memcpy(stbufm, st, sizeof(struct stat));
-            free(st);
+            if(st != NULL)
+                free(st);
             return 0;
         }
     }
@@ -63,13 +64,15 @@ _ops_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi, u
                 stbufm->st_size = dev_file_size(args, dirs[i].fid);
             stbufm->st_dev = dirs[i].fid;
 
-            free(dirs);
+            if(dirs != NULL)
+                free(dirs);
             cache_fid_add(path, stbufm);
             return 0;
         }
     }
     //if smth was bad
-    free(dirs);
+    if(dirs != NULL)
+        free(dirs);
     return -ENOENT;
 }
 
