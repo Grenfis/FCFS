@@ -4,11 +4,11 @@
 
 #include <time.h>
 
-typedef struct c_fid_item {
+/*typedef struct c_fid_item {
     struct stat st;
     //char        *path;
     time_t      time;
-} c_fid_item_t;
+} c_fid_item_t;*/
 
 static map_t    map_fid;
 
@@ -35,15 +35,12 @@ cache_fid_destroy()
 void
 cache_fid_add(const char *path, struct stat *st)
 {
-    c_fid_item_t *it = calloc(1, sizeof(c_fid_item_t));
-    it->time = time(NULL);
-    //it->path = calloc(1, strlen(path));
-    //strcpy(it->path, path);
-    memcpy(&it->st, st, sizeof(struct stat));
-    int error = hashmap_put(map_fid, path, it);
+    struct stat *tmp = malloc(sizeof(struct stat));
+    memcpy(tmp, st, sizeof(struct stat));
+    int error = hashmap_put(map_fid, path, tmp);
     if(error == MAP_FULL || error == MAP_OMEM)
     {
-
+        hashmap_clear(map_fid, fid_destroy, NULL);
     }
 }
 
@@ -51,11 +48,11 @@ struct stat *
 cache_fid_get(const char *path)
 {
     struct stat *st= calloc(1, sizeof(struct stat));
-    c_fid_item_t *it;
-    int error = hashmap_get(map_fid, path,(void**)&it);
+    struct stat *tmp;
+    int error = hashmap_get(map_fid, path,(void**)&tmp);
     if(error != MAP_OK)
         return NULL;
-    memcpy(st, &it->st, sizeof(struct stat));
+    memcpy(st, tmp, sizeof(struct stat));
     return st;
 }
 
