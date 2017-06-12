@@ -25,7 +25,7 @@ dev_read_ctable(fcfs_args_t *args, int id)
         return NULL;
     }
 
-    char *buf = calloc(1, lblk_sz);
+    char buf[lblk_sz];
     res = fread(buf, 1, lblk_sz, args->dev);
     if(res != lblk_sz)
     {
@@ -34,12 +34,29 @@ dev_read_ctable(fcfs_args_t *args, int id)
     }
 
     memcpy(table, buf, sizeof(fcfs_block_list_t));
-    free(buf);
+    //free(buf);
     return table;
 }
 
 int
 dev_write_ctable(fcfs_args_t *args, int id, fcfs_block_list_t *bl)
 {
+    int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
+    int dta_beg = args->fs_head->dta_beg * lblk_sz;
+    int clu_sz = FCFS_BLOKS_PER_CLUSTER * lblk_sz;
 
+    int res = fseek(args->dev, dta_beg + clu_sz * id, SEEK_SET);
+    if(res == 1L)
+    {
+        ERROR("seeking to cluster");
+        return -1;
+    }
+
+    res = fwrite(bl, 1, sizeof(fcfs_block_list_t), args->dev);
+    if(res != lblk_sz)
+    {
+        ERROR("writing cluster table");
+        return -1;
+    }
+    return 0;
 }

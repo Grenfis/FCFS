@@ -39,14 +39,14 @@ ops_write(const char *path, const char *data, size_t size, off_t offset, struct 
     int res = 0;
     for(size_t i = 0; i < sz_cnt; ++i)
     {
-        res = dev_read_by_id(args, fid, blk_num + i, tmp_buf + lblk_sz * i, lblk_sz);
+        res = dev_read_by_id(args, fid, blk_num + i, tmp_buf + lblk_sz * i, lblk_sz, inf, seq_sz);
         if(res < 0)
             goto error;
     }
     memcpy(tmp_buf + blk_off, data, size);
     for(size_t i = 0; i < sz_cnt; ++i)
     {
-        res = dev_write_by_id(args, fid, blk_num + i, tmp_buf + lblk_sz * i, lblk_sz);
+        res = dev_write_by_id(args, fid, blk_num + i, tmp_buf + lblk_sz * i, lblk_sz, inf, seq_sz);
         if(res < 0)
             goto error;
     }

@@ -89,10 +89,10 @@ int
 dev_del_block(fcfs_args_t *agrs, int fid, int cid, int bid);
 
 int
-dev_read_by_id(fcfs_args_t *args, int fid, int id, char *buf, int lblk_sz);
+dev_read_by_id(fcfs_args_t *args, int fid, int id, char *buf, int lblk_sz, dev_blk_info_t *inf, int seq_sz);
 
 int
-dev_write_by_id(fcfs_args_t *args, int fid, int id, const char *buf, int lblk_sz);
+dev_write_by_id(fcfs_args_t *args, int fid, int id, const char *buf, int lblk_sz, dev_blk_info_t *inf, int seq_sz);
 
 int
 dev_file_reserve(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, int last_num);

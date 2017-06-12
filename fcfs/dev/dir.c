@@ -19,12 +19,12 @@ dev_read_dir(fcfs_args_t *args, int fid, int *ret_sz)
     int   dir_buf_len = 0;
     //get file blocks
     int seq_sz = 0;
-    free(dev_get_file_seq(args, fid, &seq_sz));
+    dev_blk_info_t *inf = dev_get_file_seq(args, fid, &seq_sz);
     dir_buf = calloc(1, lblk_sz * seq_sz);
     //read blocks
     for(size_t i = 0; i < seq_sz; ++i)
     {
-        dev_read_by_id(args, fid, i, dir_buf + dir_buf_len, lblk_sz);
+        dev_read_by_id(args, fid, i, dir_buf + dir_buf_len, lblk_sz, inf, seq_sz);
         dir_buf_len += lblk_sz;
     }
     //get dir len
@@ -74,7 +74,7 @@ dev_write_dir(fcfs_args_t *args, int fid, fcfs_dir_entry_t *ent, int len)
 
     for(size_t i = 0; i < seq_sz; ++i)
     {
-        dev_write_by_id(args, fid, i, dir_buf + dir_buf_off, lblk_sz);
+        dev_write_by_id(args, fid, i, dir_buf + dir_buf_off, lblk_sz, inf, seq_sz);
         dir_buf_off += lblk_sz;
     }
 

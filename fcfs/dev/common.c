@@ -170,7 +170,8 @@ dev_file_alloc(fcfs_args_t *args, int fid)
     }
     bl->entrs[blks[0] - 1].fid = fid;
     bl->entrs[blks[0] - 1].num = 0;
-    dev_write_block(args, cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
+    //dev_write_block(args, cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
+    dev_write_ctable(args, cid, bl);
 
     if(dev_upd_bitmap(args, bl, cid))
         dev_write_bitmap(args);
@@ -189,7 +190,11 @@ dev_file_size(fcfs_args_t *args, int fid)
     int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
     fcfs_file_header_t fh;
     char buf[lblk_sz];
-    int res = dev_read_by_id(args, fid, 0, buf, lblk_sz);
+
+    int seq_sz = 0;
+    dev_blk_info_t *inf = dev_get_file_seq(args, fid, &seq_sz);
+
+    int res = dev_read_by_id(args, fid, 0, buf, lblk_sz, inf, seq_sz);
     if(res < 0)
         return -1;
     memcpy(&fh, buf, sizeof(fcfs_file_header_t));
@@ -205,13 +210,16 @@ dev_set_file_size(fcfs_args_t *args, int fid, int size)
     fcfs_file_header_t fh;
     fh.f_sz = size;
 
+    int seq_sz = 0;
+    dev_blk_info_t *inf = dev_get_file_seq(args, fid, &seq_sz);
+
     char buf[lblk_sz];
-    int res = dev_read_by_id(args, fid, 0, buf, lblk_sz);
+    int res = dev_read_by_id(args, fid, 0, buf, lblk_sz, inf, seq_sz);
     if(res < 0)
         return -1;
     memcpy(buf, &fh, sizeof(fcfs_file_header_t));
 
-    res = dev_write_by_id(args, fid, 0, buf, lblk_sz);
+    res = dev_write_by_id(args, fid, 0, buf, lblk_sz, inf, seq_sz);
     return res;
 }
 
@@ -235,14 +243,15 @@ dev_free_blocks(fcfs_args_t *args, int count, int *size)
             old_cid = cid;
             last->bid = blist[j];
             last->num = 0;
-            last->next = calloc(1, sizeof(dev_blk_info_t));
+            if(i != count - 1)
+                last->next = calloc(1, sizeof(dev_blk_info_t));
             last = last->next;
             i++;
         }
         free(blist);
         free(bl);
     }
-
+    //free(last);
     *size = i;
     return first;
 }
@@ -261,7 +270,8 @@ dev_del_block(fcfs_args_t *args, int fid, int cid, int bid)
 
     if(!dev_upd_bitmap(args, bl, cid))
         dev_write_bitmap(args);
-    dev_write_block(args, cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
+    //dev_write_block(args, cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
+    dev_write_ctable(args, cid, bl);
 
     if(b_len == 1)
     {
@@ -320,7 +330,8 @@ dev_file_reserve(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, in
         fcfs_block_list_t *bl = dev_read_ctable(args, inf->cid);
         bl->entrs[inf->bid - 1].fid = fid;
         bl->entrs[inf->bid - 1].num = last_num;
-        dev_write_block(args, inf->cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
+        //dev_write_block(args, inf->cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
+        dev_write_ctable(args, inf->cid, bl);
         inf->num = last_num;
 
         if(!dev_upd_bitmap(args, bl, inf->cid))
@@ -360,7 +371,8 @@ dev_clust_claim(fcfs_args_t *args, int cid)
         bl->entrs[i].num = i;
     }
 
-    dev_write_block(args, cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
+    //dev_write_block(args, cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
+    dev_write_ctable(args, cid, bl);
     if(!dev_upd_bitmap(args, bl, cid))
         dev_write_bitmap(args);
     free(bl);

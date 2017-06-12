@@ -55,3 +55,38 @@ dev_get_blocks(fcfs_block_list_t *blist, int fid, int *ret_sz)
     }
     return res;
 }
+
+int
+dev_read_by_id(fcfs_args_t *args, int fid, int id, char *buf, int lblk_sz, dev_blk_info_t *list, int seq_sz)
+{
+    DEBUG("fid = id - %d = %d", fid, id);
+    //int seq_sz = 0;
+    //dev_blk_info_t *list = dev_get_file_seq(args, fid, &seq_sz);
+    dev_blk_info_t *inf = list;
+
+    if(seq_sz <= 0)
+        return -1;
+
+    int cid = -1;
+    int bid = -1;
+    for(size_t i = 0; i < seq_sz; ++i)
+    {
+        if(inf->num == id)
+        {
+            cid = inf->cid;
+            bid = inf->bid;
+            break;
+        }
+        inf = inf->next;
+    }
+    DEBUG("cid = bid - %d = %d", cid, bid);
+    if(cid < 0 || bid < 0)
+    {
+        //dev_destr_blk_info(list);
+        return -1;
+    }
+
+    char *b = dev_read_block(args, cid, bid);
+    memcpy(buf, b, sizeof(char) * lblk_sz);
+    return 0;
+}

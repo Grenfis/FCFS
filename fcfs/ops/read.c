@@ -31,9 +31,13 @@ ops_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_fil
 
     char tmp[lblk_sz * sz_cnt];
     int res = 0;
+
+    int seq_sz = 0;
+    dev_blk_info_t *inf = dev_get_file_seq(args, fid, &seq_sz);
+
     for(size_t i = 0; i < sz_cnt; ++i)
     {
-        res = dev_read_by_id(args, fid, blk_num, tmp + i * lblk_sz, lblk_sz);
+        res = dev_read_by_id(args, fid, blk_num, tmp + i * lblk_sz, lblk_sz, inf, seq_sz);
         if(res < 0)
             goto error;
         blk_num++;
