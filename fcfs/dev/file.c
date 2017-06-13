@@ -181,7 +181,7 @@ dev_get_file_seq(fcfs_args_t *args, int fid, int *size)
         }
     }
     //add to cache
-    //cache_seq_add(fid, first);
+    cache_seq_add(fid, first);
 
     *size = k;
     return first;
