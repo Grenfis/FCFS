@@ -9,7 +9,7 @@
 
 #include <debug.h>
 
-static int
+static unsigned long
 get_hashsum(fcfs_args_t *args, fcfs_block_list_t *bl)
 {
     unsigned int sum = 0;

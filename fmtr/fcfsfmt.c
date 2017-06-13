@@ -151,6 +151,7 @@ void print_fcfs_head(struct fcfs_head *h){
     printf("Physical block size     : %u\n", h->phy_blk_sz);
     printf("Physical block count    : %lu\n", h->phy_blk_cnt);
     printf("First data block at     : %u\n", h->dta_beg);
+    printf("Hashsum                 : %lu\n", h->hashsum);
     printf("======================================\n");
 }
 
