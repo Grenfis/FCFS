@@ -9,6 +9,17 @@
 
 #include <debug.h>
 
+static int
+get_hashsum(fcfs_block_list_t *bl)
+{
+    unsigned int sum = 0;
+    for(size_t i = 0; i < FCFS_BLOKS_PER_CLUSTER - 1; ++i)
+    {
+        sum += bl->entrs[i].fid;
+    }
+    return -sum;
+}
+
 fcfs_block_list_t *
 dev_read_ctable(fcfs_args_t *args, int id)
 {
@@ -34,13 +45,16 @@ dev_read_ctable(fcfs_args_t *args, int id)
     }
 
     memcpy(table, buf, sizeof(fcfs_block_list_t));
-    //free(buf);
+    if(table->hashsum != get_hashsum(table)) {
+        memset(table, 0, sizeof(fcfs_block_list_t));
+    }
     return table;
 }
 
 int
 dev_write_ctable(fcfs_args_t *args, int id, fcfs_block_list_t *bl)
 {
+    bl->hashsum = get_hashsum(bl);
     int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
     int dta_beg = args->fs_head->dta_beg * lblk_sz;
     int clu_sz = FCFS_BLOKS_PER_CLUSTER * lblk_sz;

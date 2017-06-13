@@ -47,6 +47,7 @@ typedef struct fcfs_block_list_entry {
 } fcfs_block_list_entry_t;
 
 typedef struct fcfs_block_list {
+    int             hashsum;
     struct          fcfs_block_list_entry entrs[FCFS_BLOKS_PER_CLUSTER - 1];
 } fcfs_block_list_t;
 //-----------------------------------DATA--------------------------------

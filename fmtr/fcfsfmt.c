@@ -9,8 +9,6 @@
 #include <fcfs_structs.h>
 #include <scsi.h>
 
-struct stat *file_info; //file info buffer
-
 FILE *device;
 
 void print_fcfs_head(struct fcfs_head *h);
@@ -56,7 +54,7 @@ int main(int argc, char *argv[]) {
     /////////////////////prepare device///////////////////////
     FILE *device = fopen(argv[1], "wb"); //open device for writing
     if(device == NULL) {
-        printf("[ERROR] when openning device!\n");
+        printf("[ERROR] when openning device! Code: %d Text: %s\n", errno, strerror(errno));
         exit(-1);
     }
     /////////////////////prepare fs header////////////////////
@@ -115,10 +113,20 @@ int main(int argc, char *argv[]) {
     }
     free(bl);
     printf("%d bytes writed.\n", res);
+    /////////////////////root cluster////////////////////////
+    printf("Cleaning root cluster... ");
+    char clu[dta_blk * (FCFS_BLOKS_PER_CLUSTER - 1)];
+    memset(clu, 0, dta_blk * (FCFS_BLOKS_PER_CLUSTER - 1));
+
+    res = fwrite(clu, 1, dta_blk * (FCFS_BLOKS_PER_CLUSTER - 1), device);
+    if(res != dta_blk * (FCFS_BLOKS_PER_CLUSTER - 1)) {
+        printf("[ERROR] cleaning root cluster\n");
+        exit(-1);
+    }
+    printf("%d bytes writed.\n", dta_blk * (FCFS_BLOKS_PER_CLUSTER - 1));
     ////////////////////dispose resources////////////////////
     fclose(device);
     free(fs_head);
-    free(file_info);
     return 0;
 }
 
