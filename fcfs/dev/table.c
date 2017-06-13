@@ -84,22 +84,28 @@ dev_tbl_save_sec(fcfs_args_t *args, int cid)
     return 0;
 }
 
+static void
+tbl_clrs_reinit(int fid)
+{
+    clrs_cache.fid = fid;
+
+    if(clrs_cache.s1_cnt != 0)
+        free(clrs_cache.s1_cl);
+    if(clrs_cache.s2_cnt != 0)
+        free(clrs_cache.s2_cl);
+
+    clrs_cache.s0_cnt = 0;
+    clrs_cache.s1_cnt = 0;
+    clrs_cache.s2_cnt = 0;
+}
+
 int
 dev_tbl_clrs_cnt(fcfs_args_t *args, int fid) {
     DEBUG("fid = %d", fid);
 
     if(clrs_cache.fid != fid)
     {
-        clrs_cache.fid = fid;
-
-        if(clrs_cache.s1_cnt != 0)
-            free(clrs_cache.s1_cl);
-        if(clrs_cache.s2_cnt != 0)
-            free(clrs_cache.s2_cl);
-
-        clrs_cache.s0_cnt = 0;
-        clrs_cache.s1_cnt = 0;
-        clrs_cache.s2_cnt = 0;
+        tbl_clrs_reinit(fid);
     }
 
     unsigned int count = 0;
@@ -144,6 +150,10 @@ dev_tbl_clrs_get(fcfs_args_t *args, int fid, int id)
     int s1_len = ((lblk_sz - uint_len)
                     / (double)uint_len)
                     * (FCFS_BLOKS_PER_CLUSTER - 1);
+    if(clrs_cache.fid != fid)
+    {
+        dev_tbl_clrs_cnt(args, fid);
+    }
 
     if(id < (FCFS_CLUSTER_PER_FILE - 3))
     {

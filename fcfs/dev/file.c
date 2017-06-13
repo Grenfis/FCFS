@@ -33,6 +33,7 @@ dev_rm_file(fcfs_args_t *args, int fid, int pfid)
         for(size_t j = 0; j < blist_cnt; ++j)
         {
             bl->entrs[blist[j] - 1].fid = 0;
+            bl->entrs[blist[j] - 1].num = 0;
         }
 
         if(blist_cnt != 0)
