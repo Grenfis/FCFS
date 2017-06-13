@@ -30,6 +30,8 @@ typedef struct fcfs_head{
     unsigned short  phy_blk_sz;
     unsigned long   phy_blk_cnt;
     unsigned        dta_beg; //number of first data block
+
+    int             hashsum;
 } fcfs_head_t;
 
 typedef struct fcfs_table_entry {
@@ -38,6 +40,7 @@ typedef struct fcfs_table_entry {
 } fcfs_table_entry_t;
 
 typedef struct fcfs_table {
+    int             hashsum;
     struct          fcfs_table_entry entrs[FCFS_TABLE_LEN];
 } fcfs_table_t;
 //---------------------------------------CLUSTER-----------------------------------

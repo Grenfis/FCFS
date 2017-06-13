@@ -19,6 +19,11 @@ read_head(FILE *dev, int l_blk_sz)
         exit(-1);
     }
     memcpy(head, head_buf, sizeof(fcfs_head_t));
+    if(head->hashsum != (sizeof(fcfs_head_t) ^ head->ctime))
+    {
+        ERROR("bad head hashsum");
+        exit(-1);
+    }
     if(head_buf != NULL)
         free(head_buf);
     return head;
@@ -39,7 +44,7 @@ read_bitmap(FILE *dev, int bytes)
 }
 
 static fcfs_table_t *
-read_table(FILE *dev, int bytes)
+read_table(FILE *dev, int bytes, fcfs_head_t *head)
 {
     DEBUG("");
     char *table_buf = calloc(1, bytes);
@@ -51,6 +56,11 @@ read_table(FILE *dev, int bytes)
         exit(-1);
     }
     memcpy(table, table_buf, sizeof(fcfs_table_t));
+    if(table->hashsum != (sizeof(fcfs_table_t) ^ head->ctime))
+    {
+        ERROR("bad table heashsum");
+        exit(-1);
+    }
     if(table_buf != NULL)
         free(table_buf);
     return table;
@@ -88,7 +98,8 @@ dev_mount(fcfs_args_t *args)
 
     args->fs_table  = read_table(args->dev,     f_head->phy_blk_sz *
                                                 f_head->blk_sz *
-                                                f_head->tbl_len);
+                                                f_head->tbl_len,
+                                                f_head);
 
     DEBUG("fsid                 %u",    f_head->fsid);
     DEBUG("label                %s",    f_head->label);

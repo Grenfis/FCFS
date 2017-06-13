@@ -30,6 +30,7 @@ int main(int argc, char *argv[]) {
     fs_head->fsid           = 1337; //magic!
     time(&fs_head->ctime);
     time(&fs_head->atime);
+    fs_head->hashsum    = sizeof(fcfs_head_t) ^ fs_head->ctime;
     fs_head->blk_sz     = FCFS_BLOCK_SIZE;
     fs_head->clu_sz   = FCFS_BLOKS_PER_CLUSTER;
     fs_head->tbl_cnt      = FCFS_TABLE_LEN;
@@ -85,6 +86,7 @@ int main(int argc, char *argv[]) {
     int tbl_sz = fs_head->tbl_len * dta_blk;
 
     struct fcfs_table *fs_table = calloc(1, tbl_sz);
+    fs_table->hashsum = sizeof(fcfs_table_t) ^ fs_head->ctime;
     struct fcfs_table_entry *tbl_entry = &fs_table->entrs[0]; //create root directory
     tbl_entry->lnk_cnt = 1;
     tbl_entry->clrs[0] = 0;
