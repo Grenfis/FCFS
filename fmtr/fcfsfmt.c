@@ -103,6 +103,7 @@ int main(int argc, char *argv[]) {
     for(size_t i = 0; i < FCFS_BLOKS_PER_CLUSTER - 1; ++i) {
         bl->entrs[i].num = i;
     }
+    bl->hashsum ^= fs_head->ctime;
     memcpy(first_table, bl, sizeof(fcfs_block_list_t));
 
     fseek(device, fs_head->dta_beg * dta_blk, SEEK_SET);
