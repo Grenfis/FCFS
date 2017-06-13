@@ -81,7 +81,7 @@ dev_write_dir(fcfs_args_t *args, int fid, fcfs_dir_entry_t *ent, int len)
 
     if(dir_buf != NULL)
         free(dir_buf);
-    dev_destr_blk_info(inf);
+    //dev_destr_blk_info(inf);
     return 0;
 }
 
