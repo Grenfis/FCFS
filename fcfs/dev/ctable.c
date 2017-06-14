@@ -25,29 +25,13 @@ dev_read_ctable(fcfs_args_t *args, int id)
 {
     DEBUG();
     fcfs_block_list_t *table = calloc(1, sizeof(fcfs_block_list_t));
-    int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
-    int dta_beg = args->fs_head->dta_beg * lblk_sz;
-    int clu_sz = FCFS_BLOKS_PER_CLUSTER * lblk_sz;
 
-    int res = fseek(args->dev, dta_beg + clu_sz * id, SEEK_SET);
-    if(res == 1L)
-    {
-        ERROR("seeking to cluster");
-        return NULL;
-    }
-
-    char buf[lblk_sz];
-    res = fread(buf, 1, lblk_sz, args->dev);
-    if(res != lblk_sz)
-    {
-        ERROR("reading cluster table");
-        return NULL;
-    }
-
-    memcpy(table, buf, sizeof(fcfs_block_list_t));
+    char *b = dev_read_block(args, id, 0);
+    memcpy(table, b, sizeof(fcfs_block_list_t));
     if(table->hashsum != get_hashsum(args, table)) {
         memset(table, 0, sizeof(fcfs_block_list_t));
     }
+    free(b);
     return table;
 }
 
@@ -55,22 +39,6 @@ int
 dev_write_ctable(fcfs_args_t *args, int id, fcfs_block_list_t *bl)
 {
     bl->hashsum = get_hashsum(args, bl);
-    int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
-    int dta_beg = args->fs_head->dta_beg * lblk_sz;
-    int clu_sz = FCFS_BLOKS_PER_CLUSTER * lblk_sz;
-
-    int res = fseek(args->dev, dta_beg + clu_sz * id, SEEK_SET);
-    if(res == 1L)
-    {
-        ERROR("seeking to cluster");
-        return -1;
-    }
-
-    res = fwrite(bl, 1, sizeof(fcfs_block_list_t), args->dev);
-    if(res != lblk_sz)
-    {
-        ERROR("writing cluster table");
-        return -1;
-    }
+    dev_write_block(args, id, 0, (char*)bl, sizeof(fcfs_block_list_t));
     return 0;
 }
