@@ -130,10 +130,6 @@ int main(int argc, char *argv[]) {
     bl->hashsum ^= fs_head->ctime;
     memcpy(first_table, bl, sizeof(fcfs_block_list_t));
 
-    err = gcry_cipher_encrypt(hd, first_table, dta_blk, first_table, dta_blk);
-    if(err)
-        die("root table, %s", gcry_strerror(err));
-        
     fseek(device, fs_head->dta_beg * dta_blk, SEEK_SET);
     res = fwrite(first_table, 1, dta_blk, device);
     if(res != dta_blk) {
@@ -144,11 +140,16 @@ int main(int argc, char *argv[]) {
     printf("%d bytes writed.\n", res);
     /////////////////////root cluster////////////////////////
     printf("Cleaning root cluster... ");
-    char clu[dta_blk * (FCFS_BLOKS_PER_CLUSTER - 1)];
-    memset(clu, 0, dta_blk * (FCFS_BLOKS_PER_CLUSTER - 1));
+    int clu_sz = dta_blk * (FCFS_BLOKS_PER_CLUSTER - 1);
+    char clu[clu_sz];
+    memset(clu, 0, clu_sz);
 
-    res = fwrite(clu, 1, dta_blk * (FCFS_BLOKS_PER_CLUSTER - 1), device);
-    if(res != dta_blk * (FCFS_BLOKS_PER_CLUSTER - 1)) {
+    err = gcry_cipher_encrypt(hd, clu, clu_sz, clu, clu_sz);
+    if(err)
+        die("root cluster write, %s", gcry_strerror(err));
+
+    res = fwrite(clu, 1, clu_sz, device);
+    if(res != clu_sz) {
         printf("[ERROR] cleaning root cluster\n");
         exit(-1);
     }
@@ -156,6 +157,7 @@ int main(int argc, char *argv[]) {
     ////////////////////dispose resources////////////////////
     fclose(device);
     free(fs_head);
+    gcry_cipher_close(hd);
     return 0;
 }
 

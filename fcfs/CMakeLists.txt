@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
-project(fcfs VERSION 0.1 LANGUAGES C)
+project(fcfs VERSION 0.2 LANGUAGES C)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFUSE_USE_VERSION=31 -D__FILENAME__='\"$(subst ${CMAKE_SOURCE_DIR}/,,$(abspath $<))\"' -D_FILE_OFFSET_BITS=64 -g -Wall -lm")
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
@@ -19,7 +19,7 @@ set(CACHE
 
 set(DEV
     dev/common.c dev/dir.c dev/file.c dev/mount.c dev/read.c
-    dev/write_structs.c dev/write.c dev/table.c dev/ctable.c)
+    dev/unmount.c dev/write.c dev/table.c dev/ctable.c)
 
 set(OPS
     ops/getattr.c ops/main.c ops/mkdir.c ops/open.c ops/read.c

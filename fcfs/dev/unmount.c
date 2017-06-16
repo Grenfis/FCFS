@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <gcrypt.h>
 
 #include <debug.h>
 
@@ -50,6 +51,10 @@ dev_write_table(fcfs_args_t *args)
         ERROR("seeking device");
         return -1;
     }
+
+    gcry_error_t err = gcry_cipher_encrypt(args->ciph, blk_buf, tbl_blk_len, blk_buf, tbl_blk_len);
+    if(err)
+        die("write fs table, %s", gcry_strerror(err));
 
     res = fwrite(blk_buf, 1, tbl_blk_len, args->dev);
     if(res != tbl_blk_len)

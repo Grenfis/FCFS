@@ -97,7 +97,7 @@ dev_init_file(fcfs_args_t *args, int fid)
     int b_len = 0;
     int *blks = dev_get_blocks(bl, fid, &b_len);
 
-    int res = dev_write_block(args, cid, blks[0], (char*)&fh, sizeof(fcfs_file_header_t));
+    int res = dev_write_block(args, cid, blks[0], (char*)&fh, sizeof(fcfs_file_header_t), NEED);
 
     if(bl != NULL)
         free(bl);

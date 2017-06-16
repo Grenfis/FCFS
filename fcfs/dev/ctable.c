@@ -26,7 +26,7 @@ dev_read_ctable(fcfs_args_t *args, int id)
     DEBUG();
     fcfs_block_list_t *table = calloc(1, sizeof(fcfs_block_list_t));
 
-    char *b = dev_read_block(args, id, 0);
+    char *b = dev_read_block(args, id, 0, NONEED);
     memcpy(table, b, sizeof(fcfs_block_list_t));
     if(table->hashsum != get_hashsum(args, table)) {
         memset(table, 0, sizeof(fcfs_block_list_t));
@@ -39,6 +39,6 @@ int
 dev_write_ctable(fcfs_args_t *args, int id, fcfs_block_list_t *bl)
 {
     bl->hashsum = get_hashsum(args, bl);
-    dev_write_block(args, id, 0, (char*)bl, sizeof(fcfs_block_list_t));
+    dev_write_block(args, id, 0, (char*)bl, sizeof(fcfs_block_list_t), NONEED);
     return 0;
 }

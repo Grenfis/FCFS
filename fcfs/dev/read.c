@@ -2,11 +2,12 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <gcrypt.h>
 
 #include <debug.h>
 
 char *
-dev_read_block(fcfs_args_t *args, int cid, int bid)
+dev_read_block(fcfs_args_t *args, int cid, int bid, unsigned char need_crypt)
 {
     DEBUG();
     int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
@@ -26,6 +27,13 @@ dev_read_block(fcfs_args_t *args, int cid, int bid)
     {
         ERROR("reading block");
         return NULL;
+    }
+
+    if(need_crypt)
+    {
+        gcry_error_t err = gcry_cipher_decrypt(args->ciph, block, lblk_sz, block, lblk_sz);
+        if(err)
+            die("read block, %s", gcry_strerror(err));
     }
     return block;
 }
@@ -57,7 +65,8 @@ dev_get_blocks(fcfs_block_list_t *blist, int fid, int *ret_sz)
 }
 
 int
-dev_read_by_id(fcfs_args_t *args, int fid, int id, char *buf, int lblk_sz, dev_blk_info_t *list, int seq_sz)
+dev_read_by_id(fcfs_args_t *args, int fid, int id, char *buf,
+    int lblk_sz, dev_blk_info_t *list, int seq_sz)
 {
     DEBUG("fid = id - %d = %d", fid, id);
     dev_blk_info_t *inf = list;
@@ -84,7 +93,7 @@ dev_read_by_id(fcfs_args_t *args, int fid, int id, char *buf, int lblk_sz, dev_b
         return -1;
     }
 
-    char *b = dev_read_block(args, cid, bid);
+    char *b = dev_read_block(args, cid, bid, NEED);
     memcpy(buf, b, sizeof(char) * lblk_sz);
     return 0;
 }

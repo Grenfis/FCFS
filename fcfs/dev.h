@@ -6,6 +6,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+enum {
+    NONEED = 0,
+    NEED = 1
+};
+
 typedef struct dev_blk_info {
     unsigned cid;
     unsigned char bid;
@@ -29,7 +34,7 @@ dev_write_ctable(fcfs_args_t *args, int id, fcfs_block_list_t *bl);
 //cid - cluster id
 //bid - id of block of file in cluster
 char *
-dev_read_block(fcfs_args_t *args, int cid, int bid);
+dev_read_block(fcfs_args_t *args, int cid, int bid, unsigned char need_crypt);
 
 fcfs_dir_entry_t *
 dev_read_dir(fcfs_args_t *args, int fid, int *ret_sz);
@@ -74,7 +79,7 @@ int
 dev_free_cluster(fcfs_args_t *args);
 
 int
-dev_write_block(fcfs_args_t *args, int cid, int bid, const char *data, int len);
+dev_write_block(fcfs_args_t *args, int cid, int bid, char *data, int len, unsigned char need_crypt);
 
 int
 dev_create_file(fcfs_args_t *args, int pfid, int fid, const char *name, mode_t mode);
@@ -89,10 +94,12 @@ int
 dev_del_block(fcfs_args_t *agrs, int fid, int cid, int bid);
 
 int
-dev_read_by_id(fcfs_args_t *args, int fid, int id, char *buf, int lblk_sz, dev_blk_info_t *inf, int seq_sz);
+dev_read_by_id(fcfs_args_t *args, int fid, int id, char *buf, int lblk_sz,
+    dev_blk_info_t *inf, int seq_sz);
 
 int
-dev_write_by_id(fcfs_args_t *args, int fid, int id, const char *buf, int lblk_sz, dev_blk_info_t *inf, int seq_sz);
+dev_write_by_id(fcfs_args_t *args, int fid, int id, char *buf,
+    int lblk_sz, dev_blk_info_t *inf, int seq_sz);
 
 int
 dev_file_reserve(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, int last_num);

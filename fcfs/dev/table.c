@@ -51,7 +51,7 @@ dev_tbl_load_sec(fcfs_args_t *args, int cid)
     char buf[(FCFS_BLOKS_PER_CLUSTER - 1) * lblk_sz];
     for(size_t i = 1; i < FCFS_BLOKS_PER_CLUSTER - 1; ++i)
     {
-        char *b = dev_read_block(args, cid, i);
+        char *b = dev_read_block(args, cid, i, NONEED);
         memcpy(buf + (i - 1) * lblk_sz, b, lblk_sz);
         if(b != NULL)
             free(b);
@@ -79,7 +79,7 @@ dev_tbl_save_sec(fcfs_args_t *args, int cid)
 
     for(size_t i = 1; i < FCFS_BLOKS_PER_CLUSTER - 1; ++i)
     {
-        dev_write_block(args, cid, i, buf + (i - 1) * lblk_sz, lblk_sz);
+        dev_write_block(args, cid, i, buf + (i - 1) * lblk_sz, lblk_sz, NONEED);
     }
     return 0;
 }
