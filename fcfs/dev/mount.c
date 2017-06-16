@@ -3,11 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <scsi.h>
+#include <gcrypt.h>
 
 #include <debug.h>
 
 static fcfs_head_t *
-read_head(FILE *dev, int l_blk_sz)
+read_head(fcfs_args_t *args, FILE *dev, int l_blk_sz)
 {
     DEBUG("");
     char *head_buf = calloc(1, l_blk_sz);
@@ -18,6 +19,11 @@ read_head(FILE *dev, int l_blk_sz)
         ERROR("can not read fs head from dev");
         exit(-1);
     }
+
+    gcry_error_t err = gcry_cipher_decrypt(args->ciph, head_buf, l_blk_sz, head_buf, l_blk_sz);
+    if(err)
+        die("read fs header, %s", gcry_strerror(err));
+
     memcpy(head, head_buf, sizeof(fcfs_head_t));
     if(head->hashsum != (sizeof(fcfs_head_t) ^ head->ctime))
     {
@@ -44,7 +50,7 @@ read_bitmap(FILE *dev, int bytes)
 }
 
 static fcfs_table_t *
-read_table(FILE *dev, int bytes, fcfs_head_t *head)
+read_table(fcfs_args_t *args, FILE *dev, int bytes, fcfs_head_t *head)
 {
     DEBUG("");
     char *table_buf = calloc(1, bytes);
@@ -55,6 +61,11 @@ read_table(FILE *dev, int bytes, fcfs_head_t *head)
         ERROR("can not read table from dev");
         exit(-1);
     }
+
+    gcry_error_t err = gcry_cipher_decrypt(args->ciph, table_buf, bytes, table_buf, bytes);
+    if(err)
+        die("read fs table, %s", gcry_strerror(err));
+
     memcpy(table, table_buf, sizeof(fcfs_table_t));
     if(table->hashsum != (sizeof(fcfs_table_t) ^ head->ctime))
     {
@@ -90,16 +101,16 @@ dev_mount(fcfs_args_t *args)
         return -1;
     }
 
-    fcfs_head_t *f_head = read_head(args->dev, l_blk_sz);
+    fcfs_head_t *f_head = read_head(args, args->dev, l_blk_sz);
     args->fs_head   = f_head;
     args->fs_bitmap = read_bitmap(args->dev,    f_head->phy_blk_sz *
                                                 f_head->blk_sz *
                                                 f_head->bmp_len);
 
-    args->fs_table  = read_table(args->dev,     f_head->phy_blk_sz *
-                                                f_head->blk_sz *
-                                                f_head->tbl_len,
-                                                f_head);
+    args->fs_table  = read_table(args, args->dev,   f_head->phy_blk_sz *
+                                                    f_head->blk_sz *
+                                                    f_head->tbl_len,
+                                                    f_head);
 
     DEBUG("fsid                 %u",    f_head->fsid);
     DEBUG("label                %s",    f_head->label);
