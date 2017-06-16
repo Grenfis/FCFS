@@ -15,4 +15,6 @@
 
 #endif
 
+#define die(_X, ...) {fprintf(stderr, "[DIE]" _X, ##__VA_ARGS__); exit(-1);}
+
 #endif

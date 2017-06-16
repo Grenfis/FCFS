@@ -5,15 +5,16 @@
 #include <fuse3/fuse.h>
 #include <string.h>
 #include <errno.h>
+#include <utils.h>
 
 #include <fcfs_structs.h>
 
 #include "fcfs.h"
 #include "debug.h"
-#include "utils.h"
 #include "ops.h"
 
-#define PASSWD_BUF_LEN 255
+#define PASSWD_BUF_LEN 1024
+#define MD_LEN 32
 
 enum {
     FCFS_OPT_VER = 0,
@@ -53,6 +54,37 @@ static struct fuse_opt fcfs_opt[] = {
 };
 
 static unsigned char need_pass = 1;
+
+static void
+open_ciph(fcfs_args_t *args, const char *md)
+{
+    gcry_error_t err;
+    char *pass = malloc(MD_LEN / 2);
+    char *iv   = malloc(MD_LEN / 2);
+
+    memcpy(pass, md, MD_LEN / 2);
+    memcpy(iv, md + MD_LEN / 2, MD_LEN / 2);
+
+    err = gcry_cipher_open(&args->ciph, GCRY_CIPHER_RIJNDAEL, GCRY_CIPHER_MODE_ECB, 0);
+    if(err)
+        die("open cipher");
+
+    err = gcry_cipher_setkey(args->ciph, pass, MD_LEN / 2);
+    if(err)
+        die("set key");
+
+    err = gcry_cipher_setiv(args->ciph, iv, MD_LEN / 2);
+    if(err)
+        die("set iv");
+}
+
+static char *
+get_md(const char *str)
+{
+    char *ret = malloc(MD_LEN);
+    gcry_md_hash_buffer(GCRY_MD_SHA256, ret, str, strlen(str));
+    return ret;
+}
 
 //input string format in s is "-arg=smth"
 char *
@@ -96,7 +128,12 @@ fcfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs)
         case FCFS_OPT_PASSWD:
             len = strlen(arg);
             a = get_opt(arg, &len);
-            ((fcfs_args_t*)data)->passwd = a;
+            {
+                char *tmp = get_md(a);
+                open_ciph(((fcfs_args_t*)data), tmp);
+                free(tmp);
+            }
+            free(a);
             need_pass = 0;
             return 0;
             break;
@@ -138,9 +175,9 @@ get_passwd(fcfs_args_t *args)
         }
         c_buf_pos++;
     }
-    //copy password into struct
-    args->passwd = calloc(1, c_buf_pos);
-    memcpy(args->passwd, buf, c_buf_pos);
+    char *tmp = get_md(buf);
+    open_ciph(args, tmp);
+    free(tmp);
     if(buf != NULL)
         free(buf);
 }
@@ -154,9 +191,7 @@ main(int argc, char *argv[])
     memset(&fc_args, 0, sizeof(fcfs_args_t));
     fuse_opt_parse(&fu_args, &fc_args, fcfs_opt, fcfs_opt_proc);
     //get password if it not specify
-    if((need_pass == 1) &&
-        ((fc_args.passwd == NULL) ||
-        (strlen(fc_args.passwd) < FCFS_MIN_PASSWORD_LEN)))
+    if(need_pass == 1)
     {
         get_passwd(&fc_args);
     }

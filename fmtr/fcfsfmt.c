@@ -3,22 +3,35 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <gcrypt.h>
 
 #include <errno.h>
 
 #include <fcfs_structs.h>
 #include <scsi.h>
+#include <debug.h>
+#include <utils.h>
+
+#define PASSWD_BUF_LEN 1024
+#define MD_LEN 32
 
 FILE *device;
 
-void print_fcfs_head(struct fcfs_head *h);
-void print_dsc_info(struct dsc_info *h);
+gcry_cipher_hd_t    hd;
+gcry_error_t        err;
+
+static void print_fcfs_head(struct fcfs_head *h);
+static void print_dsc_info(struct dsc_info *h);
+static void get_passwd();
+static void proc_opt(int argc, char *argv[]);
 
 int main(int argc, char *argv[]) {
     if( argc < 2 ) {
         printf("[ERROR] Please specify file path\n");
         exit(-1);
     }
+
+    proc_opt(argc, argv);
 
     struct dsc_info *info = calloc(1, sizeof(struct dsc_info));
     get_disc_info(argv[1], info);
@@ -63,6 +76,11 @@ int main(int argc, char *argv[]) {
     printf("Header writing... ");
     char *head_block = calloc(1, dta_blk);
     memcpy(head_block, fs_head, sizeof(struct fcfs_head));
+
+    err = gcry_cipher_encrypt(hd, head_block, dta_blk, head_block, dta_blk);
+    if(err)
+        die("head, %s", gcry_strerror(err));
+
     int res = fwrite(head_block, 1, dta_blk, device);
     if(res != dta_blk) {
         printf("[ERROR] header write\n");
@@ -91,6 +109,10 @@ int main(int argc, char *argv[]) {
     tbl_entry->lnk_cnt = 1;
     tbl_entry->clrs[0] = 0;
 
+    err = gcry_cipher_encrypt(hd, fs_table, tbl_sz, fs_table, tbl_sz);
+    if(err)
+        die("table, %s", gcry_strerror(err));
+
     res = fwrite(fs_table, 1, tbl_sz, device);
     if(res != tbl_sz) {
         printf("[ERROR] table write\n");
@@ -108,6 +130,10 @@ int main(int argc, char *argv[]) {
     bl->hashsum ^= fs_head->ctime;
     memcpy(first_table, bl, sizeof(fcfs_block_list_t));
 
+    err = gcry_cipher_encrypt(hd, first_table, dta_blk, first_table, dta_blk);
+    if(err)
+        die("root table, %s", gcry_strerror(err));
+        
     fseek(device, fs_head->dta_beg * dta_blk, SEEK_SET);
     res = fwrite(first_table, 1, dta_blk, device);
     if(res != dta_blk) {
@@ -133,7 +159,7 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-void print_fcfs_head(struct fcfs_head *h){
+static void print_fcfs_head(struct fcfs_head *h){
     if(h == NULL)
         return;
     printf("======================================\n");
@@ -155,7 +181,7 @@ void print_fcfs_head(struct fcfs_head *h){
     printf("======================================\n");
 }
 
-void print_dsc_info(struct dsc_info *h) {
+static void print_dsc_info(struct dsc_info *h) {
     if(h == NULL)
         return;
     printf("======================================\n");
@@ -186,4 +212,92 @@ void print_dsc_info(struct dsc_info *h) {
 
     printf("Sector size             : %u\n", h->sec_sz);
     printf("Sectors count           : %u\n", h->sec_cnt);
+}
+
+static void open_ciph(const char *md)
+{
+    char *pass = malloc(MD_LEN / 2);
+    char *iv   = malloc(MD_LEN / 2);
+
+    memcpy(pass, md, MD_LEN / 2);
+    memcpy(iv, md + MD_LEN / 2, MD_LEN / 2);
+
+    err = gcry_cipher_open(&hd, GCRY_CIPHER_RIJNDAEL, GCRY_CIPHER_MODE_ECB, 0);
+    if(err)
+        die("open cipher, %s", gcry_strerror(err));
+
+    err = gcry_cipher_setkey(hd, pass, MD_LEN / 2);
+    if(err)
+        die("set key, %s", gcry_strerror(err));
+
+    err = gcry_cipher_setiv(hd, iv, MD_LEN / 2);
+    if(err)
+        die("set iv, %s", gcry_strerror(err));
+}
+
+static char *get_md(const char *str)
+{
+    char *ret = malloc(MD_LEN);
+    gcry_md_hash_buffer(GCRY_MD_SHA256, ret, str, strlen(str));
+    return ret;
+}
+
+static void get_passwd()
+{
+    char *buf = calloc(1, PASSWD_BUF_LEN);
+    unsigned char c_buf_pos = 0;
+    char c = '\0';
+    char p_req = 1;
+    printf("Enter password:\n");
+    while(p_req)
+    {
+        switch(c = getch())
+        {
+            case '\n':
+                if(c_buf_pos >= FCFS_MIN_PASSWORD_LEN)
+                {
+                    p_req = 0;
+                }
+                else
+                {
+                    printf("Password too short!\n");
+                }
+                break;
+            default:
+                buf[c_buf_pos] = c;
+                break;
+        }
+        c_buf_pos++;
+    }
+    char *tmp = get_md(buf);
+    open_ciph(tmp);
+    free(tmp);
+    if(buf != NULL)
+        free(buf);
+}
+
+static void proc_opt(int argc, char *argv[]) {
+    char *pass = NULL;
+    for(size_t i = 1; i < argc; ++i) {
+        if(argv[i][0] != '-')
+            continue;
+        switch(argv[i][1]) {
+            case 'p':
+                {
+                    pass = malloc(strlen(&argv[i][2]));
+                    strcpy(pass, &argv[i][2]);
+                    char *tmp = get_md(pass);
+                    open_ciph(tmp);
+                    free(tmp);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+    if(pass == NULL) {
+        get_passwd();
+    }else{
+        free(pass);
+    }
 }

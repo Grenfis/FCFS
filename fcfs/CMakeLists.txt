@@ -30,9 +30,9 @@ set(OPS
 set(HASHMAP
     hashmap/hashmap.c)
 
-add_executable(fcfs fcfs.c utils.c ${OPS} ${DEV} ${HASHMAP} ${CACHE})
+add_executable(fcfs fcfs.c ${OPS} ${DEV} ${HASHMAP} ${CACHE})
 
 target_link_libraries(fcfs fcfs_lib)
 target_link_libraries(fcfs fuse3)
-#target_link_libraries(fcfs ${FUSE_LIBRARIES})
+target_link_libraries(fcfs gcrypt)
 target_compile_options(fcfs PUBLIC -std=c11)

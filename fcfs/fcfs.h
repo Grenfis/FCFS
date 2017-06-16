@@ -3,10 +3,11 @@
 
 #include <fcfs_structs.h>
 #include <stdio.h>
+#include <gcrypt.h>
 
 typedef struct fcfs_args {
     char            *p_dev;      //device
-    char            *passwd;     //password
+    gcry_cipher_hd_t ciph;
     FILE            *dev;
     fcfs_head_t     *fs_head;
     unsigned char   *fs_bitmap;

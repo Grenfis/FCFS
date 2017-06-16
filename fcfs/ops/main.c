@@ -28,8 +28,9 @@ ops_destroy(void *a)
     if(args->p_dev != NULL)
         free(args->p_dev);
     DEBUG("deleted p_dev");
-    if(args->passwd != NULL)
-        free(args->passwd);
+    //if(args->passwd != NULL)
+        //free(args->passwd);
+    gcry_cipher_close(args->ciph);
     DEBUG("deleted passwd");
     if(args->fs_head != NULL)
         free(args->fs_head);

@@ -1,10 +1,10 @@
 #include "../dev.h"
-#include "../utils.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <scsi.h>
+#include <utils.h>
 
 #include <debug.h>
 

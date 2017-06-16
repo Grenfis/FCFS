@@ -9,4 +9,5 @@ include_directories("/home/snippy/diploma/include/")
 
 add_executable(fmtr fcfsfmt.c)
 target_link_libraries(fmtr fcfs_lib)
+target_link_libraries(fmtr gcrypt)
 target_compile_options(fmtr PUBLIC -std=c11)

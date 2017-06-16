@@ -4,8 +4,8 @@
 #include "../ops.h"
 #include "../fcfs.h"
 #include "../dev.h"
-#include "../utils.h"
 
+#include <utils.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
