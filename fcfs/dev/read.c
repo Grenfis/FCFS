@@ -60,8 +60,6 @@ int
 dev_read_by_id(fcfs_args_t *args, int fid, int id, char *buf, int lblk_sz, dev_blk_info_t *list, int seq_sz)
 {
     DEBUG("fid = id - %d = %d", fid, id);
-    //int seq_sz = 0;
-    //dev_blk_info_t *list = dev_get_file_seq(args, fid, &seq_sz);
     dev_blk_info_t *inf = list;
 
     if(seq_sz <= 0)

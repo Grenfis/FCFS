@@ -52,6 +52,8 @@ static struct fuse_opt fcfs_opt[] = {
     FUSE_OPT_KEY("-b %s", FCFS_OPT_DEV)
 };
 
+static unsigned char need_pass = 1;
+
 //input string format in s is "-arg=smth"
 char *
 get_opt(const char *s, int *len)
@@ -82,17 +84,20 @@ fcfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs)
     {
         case FCFS_OPT_VER:
             fuse_opt_add_arg(outargs, "--version");
+            need_pass = 0;
             break;
         case FCFS_OPT_HELP:
             fprintf(stderr, "FCFS is a driver of file system.\n");
             fprintf(stderr, "   -b path_to_device   - path to block device.\n");
             fprintf(stderr, "   -p password         - password\n\n");
             fuse_opt_add_arg(outargs, "--help");
+            need_pass = 0;
             break;
         case FCFS_OPT_PASSWD:
             len = strlen(arg);
             a = get_opt(arg, &len);
             ((fcfs_args_t*)data)->passwd = a;
+            need_pass = 0;
             return 0;
             break;
         case FCFS_OPT_DEV:
@@ -105,6 +110,41 @@ fcfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs)
     return 1;
 }
 
+static void
+get_passwd(fcfs_args_t *args)
+{
+    char *buf = calloc(1, PASSWD_BUF_LEN);
+    unsigned char c_buf_pos = 0;
+    char c = '\0';
+    char p_req = 1;
+    printf("Enter password:\n");
+    while(p_req)
+    {
+        switch(c = getch())
+        {
+            case '\n':
+                if(c_buf_pos >= FCFS_MIN_PASSWORD_LEN)
+                {
+                    p_req = 0;
+                }
+                else
+                {
+                    printf("Password too short!\n");
+                }
+                break;
+            default:
+                buf[c_buf_pos] = c;
+                break;
+        }
+        c_buf_pos++;
+    }
+    //copy password into struct
+    args->passwd = calloc(1, c_buf_pos);
+    memcpy(args->passwd, buf, c_buf_pos);
+    if(buf != NULL)
+        free(buf);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -114,43 +154,18 @@ main(int argc, char *argv[])
     memset(&fc_args, 0, sizeof(fcfs_args_t));
     fuse_opt_parse(&fu_args, &fc_args, fcfs_opt, fcfs_opt_proc);
     //get password if it not specify
-    if(fc_args.passwd == NULL || strlen(fc_args.passwd) < FCFS_MIN_PASSWORD_LEN)
+    if((need_pass == 1) &&
+        ((fc_args.passwd == NULL) ||
+        (strlen(fc_args.passwd) < FCFS_MIN_PASSWORD_LEN)))
     {
-        char *buf = calloc(1, PASSWD_BUF_LEN);
-        unsigned char c_buf_pos = 0;
-        char c = '\0';
-        char p_req = 1;
-        printf("Enter password:\n");
-        while(p_req)
-        {
-            switch(c = getch())
-            {
-                case '\n':
-                    if(c_buf_pos >= FCFS_MIN_PASSWORD_LEN)
-                    {
-                        p_req = 0;
-                    }
-                    else
-                    {
-                        printf("Password too short!\n");
-                    }
-                    break;
-                default:
-                    buf[c_buf_pos] = c;
-                    break;
-            }
-            c_buf_pos++;
-        }
-        //copy password into struct
-        fc_args.passwd = calloc(1, c_buf_pos);
-        memcpy(fc_args.passwd, buf, c_buf_pos);
-        if(buf != NULL)
-            free(buf);
+        get_passwd(&fc_args);
     }
+#ifdef DBG
     for(size_t i = 0; i < fu_args.argc; ++i)
     {
         DEBUG("argv[%lu] = %s", i, fu_args.argv[i]);
     }
+#endif
     //run daemon
     return fuse_main(fu_args.argc, fu_args.argv, &fcfs_ops, &fc_args);
 }
