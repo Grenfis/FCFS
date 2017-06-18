@@ -10,22 +10,22 @@ include_directories("/home/snippy/diploma/include/")
 link_directories("/home/snippy/diploma/lib/lib/")
 
 set(CACHE
-    cache/cache.c cache/file_id.c cache/file_seq.c)
+    src/cache/cache.c src/cache/file_id.c src/cache/file_seq.c)
 
 set(DEV
-    dev/common.c dev/dir.c dev/file.c dev/mount.c dev/read.c
-    dev/unmount.c dev/write.c dev/table.c dev/ctable.c)
+    src/dev/common.c src/dev/dir.c src/dev/file.c src/dev/mount.c src/dev/read.c
+    src/dev/unmount.c src/dev/write.c src/dev/table.c src/dev/ctable.c)
 
 set(OPS
-    ops/getattr.c ops/main.c ops/mkdir.c ops/open.c ops/read.c
-    ops/readdir.c ops/rmdir.c ops/create.c ops/unlink.c ops/chown.c
-    ops/truncate.c ops/utimens.c ops/write.c ops/flush.c ops/opendir.c
-    ops/releasedir.c ops/release.c)
+    src/ops/getattr.c src/ops/main.c src/ops/mkdir.c src/ops/open.c src/ops/read.c
+    src/ops/readdir.c src/ops/rmdir.c src/ops/create.c src/ops/unlink.c src/ops/chown.c
+    src/ops/truncate.c src/ops/utimens.c src/ops/write.c src/ops/flush.c src/ops/opendir.c
+    src/ops/releasedir.c src/ops/release.c)
 
 set(HASHMAP
     hashmap/hashmap.c)
 
-add_executable(fcfs fcfs.c ${OPS} ${DEV} ${HASHMAP} ${CACHE})
+add_executable(fcfs src/fcfs.c ${OPS} ${DEV} ${HASHMAP} ${CACHE})
 
 target_link_libraries(fcfs fcfs_lib)
 target_link_libraries(fcfs fuse3)

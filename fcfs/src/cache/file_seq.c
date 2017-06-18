@@ -1,5 +1,5 @@
 #include "../cache.h"
-#include "../hashmap/hashmap.h"
+#include "../../hashmap/hashmap.h"
 
 #include <stdlib.h>
 #include <string.h>
