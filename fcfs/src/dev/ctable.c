@@ -39,6 +39,5 @@ int
 dev_write_ctable(fcfs_args_t *args, int id, fcfs_block_list_t *bl)
 {
     bl->hashsum = get_hashsum(args, bl);
-    dev_write_block(args, id, 0, (char*)bl, sizeof(fcfs_block_list_t), NONEED);
-    return 0;
+    return dev_write_block(args, id, 0, (char*)bl, sizeof(fcfs_block_list_t), NONEED);
 }

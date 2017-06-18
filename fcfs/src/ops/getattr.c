@@ -8,7 +8,7 @@ _ops_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi, u
 
     if(!flag)
     {
-        struct stat *st = cache_fid_get(path);
+        struct stat *st = cache_stat_get(path);
         if(st != NULL)
         {
             memcpy(stbufm, st, sizeof(struct stat));
@@ -66,7 +66,7 @@ _ops_getattr(const char *path, struct stat *stbufm, struct fuse_file_info *fi, u
 
             if(dirs != NULL)
                 free(dirs);
-            cache_fid_add(path, stbufm);
+            cache_stat_add(path, stbufm);
             return 0;
         }
     }

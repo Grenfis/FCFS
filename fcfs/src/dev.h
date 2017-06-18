@@ -6,57 +6,140 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+/**
+    Обозначает требуется или не требуется шифровать/расшифровывать блок данных
+    при записи/считывании.
+*/
 enum {
-    NONEED = 0,
-    NEED = 1
+    NONEED = 0, ///< Не требуется
+    NEED = 1    ///< Требуется
 };
 
+/**
+    Звено списка блоков файла
+*/
 typedef struct dev_blk_info {
-    unsigned cid;
-    unsigned char bid;
-    unsigned num;
-    struct dev_blk_info *next;
+    unsigned                cid;    ///< Порядковый номер кластера блоков
+    unsigned char           bid;    ///< Порядковый номер блока внутри кластера
+    unsigned                num;    ///< Логический порядковый номер в последовательности блоков
+    struct dev_blk_info     *next;  ///< Указательн на следующее звено списка
 } dev_blk_info_t;
 
+/**
+    Уничтожает список блоков
+    @param [in] i указатель на голову списка блоков
+*/
 void
 dev_destr_blk_info(dev_blk_info_t *i);
 
+/**
+    Выполняет необходимые процедуры по монтированию устройства и первичной
+    инициализации драйвера ФС
+    @param [in] args указатель на структуру с основными данными ФС
+    @return 0 - успешно, -1 - ошибка
+*/
 int
 dev_mount(fcfs_args_t *args);
 
-//id - cluster id
+/**
+    Чтение таблицы блоков кластера
+    @param [in] args указатель на структуру с основными данными ФС
+    @param [in] id порядковый номер кластера
+    @return указатель на структуру с информацией о блоках кластера
+*/
 fcfs_block_list_t *
 dev_read_ctable(fcfs_args_t *args, int id);
 
+/**
+    Запись таблицы блоков кластера
+    @param [in] args указатель на структуру с основными данными ФС
+    @param [in] id порядковый номер кластера
+    @param [in] bl указатель на структуру с информацией о боках кластера
+    @return 0 - успешно, -1 - ошибка
+*/
 int
 dev_write_ctable(fcfs_args_t *args, int id, fcfs_block_list_t *bl);
 
-//cid - cluster id
-//bid - id of block of file in cluster
+/**
+    Чтение одного логического блока с носителя
+    @param [in] args указатель на структуру с основными данными ФС
+    @param [in] сid порядковый номер кластера
+    @param [in] bid порядковый номер блока в кластере
+    @param [in] need_crypt флаг необходимости расшифровки считанных данных
+    @return указатель на буффер с данными размера в один логический блок
+*/
 char *
 dev_read_block(fcfs_args_t *args, int cid, int bid, unsigned char need_crypt);
 
+/**
+    Чтение директории
+    @param [in] args указатель на структуру с основными данными ФС
+    @param [in] fid файловый идентификатор директории
+    @param [out] ret_sz длина массива записей директории
+    @return NULL - ошибка, иначе указатель на массив записей директорий
+*/
 fcfs_dir_entry_t *
 dev_read_dir(fcfs_args_t *args, int fid, int *ret_sz);
 
+/**
+    Запись содержимого директории
+    @param [in] args указатель на структуру с основными данными ФС
+    @param [in] fid файловый идентификатор директории
+    @param [in] ent указатель на массив записей директории
+    @param [in] len длина массива
+    @return 0 - успешно, -1 - ошибка
+*/
 int
 dev_write_dir(fcfs_args_t *args, int fid, fcfs_dir_entry_t *ent, int len);
 
+/**
+    Поиск свободного идентификатора файла
+    @param [in] args указатель на структуру с основными данными ФС
+    @return -1 - ошибка, иначе свободный идентификатор
+*/
 int
 dev_free_fid(fcfs_args_t *args);
 
+/**
+    Запись заголовка файловой системы (Не реализовано!)
+    @param [in] args указатель на структуру с основными данными ФС
+    @return 0 - успешно, -1 - ошибка
+*/
 int
 dev_write_head(fcfs_args_t *args);
 
+/**
+    Запись битовой карты
+    @param [in] args указатель на структуру с основными данными ФС
+    @return 0 - успешно, -1 - ошибка
+*/
 int
 dev_write_bitmap(fcfs_args_t *args);
 
+/**
+    Запись файловой таблицы
+    @param [in] args указатель на структуру с основными данными ФС
+    @return 0 - успешно, -1 - ошибка
+*/
 int
 dev_write_table(fcfs_args_t *args);
 
+/**
+    Выделение первого блока под файл и установка новых значений в файловой
+    таблице
+    @param [in] args указатель на структуру с основными данными ФС
+    @param [in] fid файловый идентификатор
+    @return 0 - успешно, -1 - ошибка
+*/
 int
 dev_file_alloc(fcfs_args_t *args, int fid);
 
+/**
+    Установка размера файла в 0 байт
+    @param [in] args указатель на структуру с основными данными ФС
+    @param [in] fid файловый идентификатор
+    @return 0 - успешно, -1 - ошибка
+*/
 int
 dev_init_file(fcfs_args_t *args, int fid);
 

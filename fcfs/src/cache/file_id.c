@@ -15,13 +15,13 @@ fid_destroy(any_t a, any_t b)
 }
 
 void
-cache_fid_init()
+cache_stat_init()
 {
     map_fid = hashmap_new();
 }
 
 void
-cache_fid_destroy()
+cache_stat_destroy()
 {
     //hashmap_iterate(map_fid, fid_destroy, NULL);
     hashmap_clear(map_fid, fid_destroy, NULL);
@@ -29,7 +29,7 @@ cache_fid_destroy()
 }
 
 void
-cache_fid_add(const char *path, struct stat *st)
+cache_stat_add(const char *path, struct stat *st)
 {
     struct stat *tmp = malloc(sizeof(struct stat));
     memcpy(tmp, st, sizeof(struct stat));
@@ -41,7 +41,7 @@ cache_fid_add(const char *path, struct stat *st)
 }
 
 struct stat *
-cache_fid_get(const char *path)
+cache_stat_get(const char *path)
 {
     struct stat *st= calloc(1, sizeof(struct stat));
     struct stat *tmp;

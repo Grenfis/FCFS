@@ -15,15 +15,19 @@
 #include <unistd.h>
 #include <debug.h>
 
-typedef struct fcfs_args fcfs_args_t;
-
-//get main fs data
+/**
+    @return Структура с основными необходимыми данными
+*/
 static inline fcfs_args_t *
 fcfs_get_args(void) {
     return (fcfs_args_t*)fuse_get_context()->private_data;
 }
 
-//get file if byt path
+/**
+    @brief Вернет идентификатор файла по заданому пути
+    @param[in] path Путь к файлу
+    @return Идентификатор файла
+*/
 static inline int
 fcfs_get_fid(const char *path) {
     struct stat st;
@@ -31,7 +35,11 @@ fcfs_get_fid(const char *path) {
     return st.st_dev;
 }
 
-//get parent file id by path
+/**
+    @brief Вернет идентификатор директории в которой находится файл
+    @param[in] path путь к файлу, id директории которого требуется найти
+    @return Идентификатор родительской директории файла указанного в пути
+*/
 static inline int
 fcfs_get_pfid(const char *path) {
     int p_len = get_parrent_path(path);

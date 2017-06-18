@@ -49,6 +49,7 @@ dev_write_dir(fcfs_args_t *args, int fid, fcfs_dir_entry_t *ent, int len)
 {
     DEBUG();
     //define vars
+    int res = 0;
     int lblk_sz = args->fs_head->blk_sz * args->fs_head->phy_blk_sz;
     int dir_buf_len = len * sizeof(fcfs_dir_entry_t);
     int dir_blk_cnt = to_blk_cnt(dir_buf_len + sizeof(fcfs_file_header_t), lblk_sz);
@@ -75,14 +76,14 @@ dev_write_dir(fcfs_args_t *args, int fid, fcfs_dir_entry_t *ent, int len)
 
     for(size_t i = 0; i < seq_sz; ++i)
     {
-        dev_write_by_id(args, fid, i, dir_buf + dir_buf_off, lblk_sz, inf, seq_sz);
+        res = dev_write_by_id(args, fid, i, dir_buf + dir_buf_off, lblk_sz, inf, seq_sz);
         dir_buf_off += lblk_sz;
     }
 
     if(dir_buf != NULL)
         free(dir_buf);
-    //dev_destr_blk_info(inf);
-    return 0;
+
+    return res;
 }
 
 int
