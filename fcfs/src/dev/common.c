@@ -81,15 +81,15 @@ dev_upd_bitmap(fcfs_args_t *args, fcfs_block_list_t *bl, int cid)
     if(has_free == 0 && !being_full)
     {
         args->fs_bitmap[byte] |= mask[num];
-        return 0;
+        return 1;
     }
     else if(has_free == 1 && being_full)
     {
         args->fs_bitmap[byte] &= ~(mask[num]);
-        return 0;
+        return 1;
     }
 
-    return 1;
+    return 0;
 }
 
 int
@@ -143,92 +143,6 @@ dev_free_fid(fcfs_args_t *args)
     return -1;
 }
 
-int
-dev_file_alloc(fcfs_args_t *args, int fid)
-{
-    DEBUG();
-    memset(&args->fs_table->entrs[fid], 0, sizeof(fcfs_table_entry_t));
-
-    int cid = dev_free_cluster(args);
-    if(cid <= 0 )
-    {
-        ERROR("not enouth clrs");
-        return -1;
-    }
-
-    memset(&args->fs_table->entrs[fid], 0, sizeof(fcfs_table_entry_t));
-    args->fs_table->entrs[fid].lnk_cnt = 1;
-    args->fs_table->entrs[fid].clrs[0] = cid;
-
-    fcfs_block_list_t *bl = dev_read_ctable(args, cid);
-    int blk_cnt = 0;
-    int *blks   = dev_get_blocks(bl, 0, &blk_cnt);
-    if(blk_cnt == 0)
-    {
-        ERROR("cluster is not free");
-        if(blks != NULL)
-            free(blks);
-        if(bl != NULL)
-            free(bl);
-        return -1;
-    }
-    bl->entrs[blks[0] - 1].fid = fid;
-    bl->entrs[blks[0] - 1].num = 0;
-    //dev_write_block(args, cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
-    dev_write_ctable(args, cid, bl);
-
-    if(dev_upd_bitmap(args, bl, cid))
-        dev_write_bitmap(args);
-    dev_write_table(args);
-
-    if(bl != NULL)
-        free(bl);
-    if(blks != NULL)
-        free(blks);
-    return 0;
-}
-
-int
-dev_file_size(fcfs_args_t *args, int fid)
-{
-    DEBUG();
-
-    int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
-    fcfs_file_header_t fh;
-    char buf[lblk_sz];
-
-    int seq_sz = 0;
-    dev_blk_info_t *inf = dev_get_file_seq(args, fid, &seq_sz);
-
-    int res = dev_read_by_id(args, fid, 0, buf, lblk_sz, inf, seq_sz);
-    if(res < 0)
-        return -1;
-    memcpy(&fh, buf, sizeof(fcfs_file_header_t));
-    return fh.f_sz;
-}
-
-int
-dev_set_file_size(fcfs_args_t *args, int fid, int size)
-{
-    DEBUG();
-
-    int lblk_sz = args->fs_head->phy_blk_sz * args->fs_head->blk_sz;
-    fcfs_file_header_t fh;
-    fh.f_sz = size;
-
-    int seq_sz = 0;
-    dev_blk_info_t *inf = dev_get_file_seq(args, fid, &seq_sz);
-
-    char buf[lblk_sz];
-    int res = dev_read_by_id(args, fid, 0, buf, lblk_sz, inf, seq_sz);
-    if(res < 0)
-        return -1;
-    memcpy(buf, &fh, sizeof(fcfs_file_header_t));
-
-    res = dev_write_by_id(args, fid, 0, buf, lblk_sz, inf, seq_sz);
-    return res;
-}
-
 dev_blk_info_t *
 dev_free_blocks(fcfs_args_t *args, int count, int *size)
 {
@@ -267,6 +181,7 @@ dev_free_blocks(fcfs_args_t *args, int count, int *size)
 int
 dev_del_block(fcfs_args_t *args, int fid, int cid, int bid)
 {
+    int res = 0;
     int clust_cnt = dev_tbl_clrs_cnt(args, fid);
     fcfs_block_list_t *bl = dev_read_ctable(args, cid);
 
@@ -276,10 +191,10 @@ dev_del_block(fcfs_args_t *args, int fid, int cid, int bid)
     bl->entrs[bid - 1].fid = 0;
     bl->entrs[bid - 1].num = 0;
 
-    if(!dev_upd_bitmap(args, bl, cid))
+    if(dev_upd_bitmap(args, bl, cid))
         dev_write_bitmap(args);
     //dev_write_block(args, cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
-    dev_write_ctable(args, cid, bl);
+    res = dev_write_ctable(args, cid, bl);
 
     if(b_len == 1)
     {
@@ -295,64 +210,7 @@ dev_del_block(fcfs_args_t *args, int fid, int cid, int bid)
         free(blist);
     if(bl != NULL)
         free(bl);
-    return 0;
-}
-
-void
-dev_file_mem_clrs(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, int clust_cnt)
-{
-    for(size_t i = 0; i < seq_sz; ++i)
-    {
-        char f = 0;
-        for(size_t j = 0; j < clust_cnt; ++j)
-        {
-            int t = dev_tbl_clrs_get(args, fid, j);
-            if(t == inf->cid)
-            {
-                f = 1;
-                break;
-            }
-        }
-        if(f != 1)
-        {
-            dev_tbl_clrs_add(args, fid, inf->cid);
-            clust_cnt++;
-        }
-        inf = inf->next;
-    }
-}
-
-int
-dev_file_reserve(fcfs_args_t *args, int fid, dev_blk_info_t *inf, int seq_sz, int last_num)
-{
-    if(fid == 0)
-    {
-        ERROR("root can not be resize");
-        return -1;
-    }
-    int clust_cnt = dev_tbl_clrs_cnt(args, fid);
-    dev_blk_info_t *first = inf;
-    if(clust_cnt < 0)
-        return -1;
-    for(size_t i = 0; i < seq_sz; ++i)
-    {
-        last_num++;
-        fcfs_block_list_t *bl = dev_read_ctable(args, inf->cid);
-        bl->entrs[inf->bid - 1].fid = fid;
-        bl->entrs[inf->bid - 1].num = last_num;
-        //dev_write_block(args, inf->cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
-        dev_write_ctable(args, inf->cid, bl);
-        inf->num = last_num;
-
-        if(!dev_upd_bitmap(args, bl, inf->cid))
-            dev_write_bitmap(args);
-        if(bl != NULL)
-            free(bl);
-        inf = inf->next;
-    }
-    dev_file_mem_clrs(args, fid, first, seq_sz, clust_cnt);
-    dev_write_table(args);
-    return 0;
+    return res;
 }
 
 int
@@ -383,10 +241,10 @@ dev_clust_claim(fcfs_args_t *args, int cid)
     }
 
     //dev_write_block(args, cid, 0, (char*)bl, sizeof(fcfs_block_list_t));
-    dev_write_ctable(args, cid, bl);
-    if(!dev_upd_bitmap(args, bl, cid))
+    int res = dev_write_ctable(args, cid, bl);
+    if(dev_upd_bitmap(args, bl, cid))
         dev_write_bitmap(args);
     if(bl != NULL)
         free(bl);
-    return 0;
+    return res;
 }
